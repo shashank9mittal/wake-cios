@@ -1,0 +1,233 @@
+[
+  {
+    "id": "deploy-001",
+    "name": "Checkout Step 2 Payment UI Refactor",
+    "service": "checkout-api",
+    "engineer": "p.sharma",
+    "team": "Checkout Experience",
+    "surface": "mobile-checkout",
+    "change_type": "code",
+    "change_artifact": "Replaced full-screen payment sheet with inline card form; removed sticky CTA, moved submit button below billing address fields",
+    "primary_metric": "checkout_initiation_rate",
+    "deployed_at": null,
+    "outcome": "regression",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": -0.031,
+      "cart_abandonment_rate": 0.038,
+      "session_duration_s": -14.0,
+      "payment_completion_rate": -0.024
+    },
+    "affected_segment": "Mobile iOS",
+    "context_for_claude": "Moving the submit button below billing address fields pushed it off-screen on iPhone SE viewports, causing users to miss it and abandon checkout before initiating payment."
+  },
+  {
+    "id": "deploy-002",
+    "name": "Search Ranking Latency Optimization",
+    "service": "search-api",
+    "engineer": "m.chen",
+    "team": "Search Platform",
+    "surface": "search-results",
+    "change_type": "code",
+    "change_artifact": "Replaced synchronous Elasticsearch call with async batch fetch; no changes to result ordering, ranking weights, or UI",
+    "primary_metric": "checkout_initiation_rate",
+    "deployed_at": null,
+    "outcome": "clean",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": 0.002,
+      "cart_abandonment_rate": -0.004,
+      "session_duration_s": 1.5,
+      "payment_completion_rate": 0.001
+    },
+    "affected_segment": "None",
+    "context_for_claude": "Pure infrastructure optimization with no customer-facing changes; all behavioral metrics are within normal daily variance."
+  },
+  {
+    "id": "deploy-003",
+    "name": "Personalized Recommendations Collaborative Filter v2",
+    "service": "recommendation-api",
+    "engineer": "a.rodriguez",
+    "team": "Personalization",
+    "surface": "homepage",
+    "change_type": "code",
+    "change_artifact": "Upgraded recommendation model from item-based CF to user-session CF; added real-time purchase history embeddings to ranking signal",
+    "primary_metric": "checkout_initiation_rate",
+    "deployed_at": null,
+    "outcome": "positive",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": 0.024,
+      "cart_abandonment_rate": -0.019,
+      "session_duration_s": 11.0,
+      "payment_completion_rate": 0.018
+    },
+    "affected_segment": "All users",
+    "context_for_claude": "Session-aware collaborative filtering surfaces items matching active purchase intent, increasing checkout initiation and reducing abandonment across all user cohorts."
+  },
+  {
+    "id": "deploy-004",
+    "name": "Cart Service Promo Code Validation Refactor",
+    "service": "cart-service",
+    "engineer": "d.okonkwo",
+    "team": "Cart & Promotions",
+    "surface": "mobile-checkout",
+    "change_type": "code",
+    "change_artifact": "Moved promo validation from client-side to server-side; validation now fires on every cart mutation, adding 340ms median latency to cart updates",
+    "primary_metric": "cart_abandonment_rate",
+    "deployed_at": null,
+    "outcome": "regression",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": -0.019,
+      "cart_abandonment_rate": 0.044,
+      "session_duration_s": -22.0,
+      "payment_completion_rate": -0.015
+    },
+    "affected_segment": "All users",
+    "context_for_claude": "Server-side promo validation added noticeable lag to every quantity change and item removal, causing users to abandon carts before reaching checkout."
+  },
+  {
+    "id": "deploy-005",
+    "name": "Product Recommendation Prompt Tone Shift",
+    "service": "recommendation-api",
+    "engineer": "k.patel",
+    "team": "GenAI Merchandising",
+    "surface": "item-detail",
+    "change_type": "prompt",
+    "change_artifact": "System prompt changed from 'List 4 highly relevant complementary products with concise labels' to 'Suggest products the customer will love using warm, conversational descriptions up to 40 words each'",
+    "primary_metric": "checkout_initiation_rate",
+    "deployed_at": null,
+    "outcome": "regression",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": -0.027,
+      "cart_abandonment_rate": 0.031,
+      "session_duration_s": 19.0,
+      "payment_completion_rate": -0.019
+    },
+    "affected_segment": "Mobile iOS",
+    "context_for_claude": "Verbose 40-word recommendation labels overflowed the carousel card on mobile, clipping product names and prices and pushing the add-to-cart affordance below the visible area."
+  },
+  {
+    "id": "deploy-006",
+    "name": "Homepage Hero Banner Feature Flag Rollout",
+    "service": "homepage-service",
+    "engineer": "l.nguyen",
+    "team": "Homepage & Navigation",
+    "surface": "homepage",
+    "change_type": "config",
+    "change_artifact": "feature_flags.yaml: homepage_hero_v3_enabled flipped from false to true; affects banner image CDN path only, no layout or copy changes",
+    "primary_metric": "checkout_initiation_rate",
+    "deployed_at": null,
+    "outcome": "clean",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": 0.001,
+      "cart_abandonment_rate": 0.002,
+      "session_duration_s": -0.5,
+      "payment_completion_rate": 0.000
+    },
+    "affected_segment": "None",
+    "context_for_claude": "CDN path swap for hero image with identical dimensions and placement; no behavioral signal expected and none detected."
+  },
+  {
+    "id": "deploy-007",
+    "name": "Checkout API Token Refresh Timing Fix",
+    "service": "checkout-api",
+    "engineer": "r.kim",
+    "team": "Checkout Experience",
+    "surface": "mobile-checkout",
+    "change_type": "code",
+    "change_artifact": "Adjusted auth token refresh window from 60s to 90s before expiry to reduce mid-checkout token expiration errors on slow connections",
+    "primary_metric": "checkout_initiation_rate",
+    "deployed_at": null,
+    "outcome": "noise",
+    "baseline": {
+      "checkout_initiation_rate": 0.342,
+      "cart_abandonment_rate": 0.618,
+      "session_duration_s": 187,
+      "payment_completion_rate": 0.710
+    },
+    "baseline_stddev": {
+      "checkout_initiation_rate": 0.008,
+      "cart_abandonment_rate": 0.012,
+      "session_duration_s": 8.0,
+      "payment_completion_rate": 0.009
+    },
+    "shift": {
+      "checkout_initiation_rate": 0.009,
+      "cart_abandonment_rate": -0.007,
+      "session_duration_s": 3.0,
+      "payment_completion_rate": 0.005
+    },
+    "affected_segment": "None",
+    "context_for_claude": "Token refresh timing adjustment affects only a rare edge case on slow connections; all shifts are within normal hourly variance and no alert should fire."
+  }
+]
