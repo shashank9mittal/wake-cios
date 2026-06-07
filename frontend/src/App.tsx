@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./services/api";
+import MetricChart from './components/MetricChart'
 import type {
   DeployEvent,
   MetricsResponse,
@@ -208,6 +209,18 @@ function App() {
                     )
                   })}
                 </div>
+
+                {metrics.signal_detected &&
+                 metrics.datapoints[metrics.primary_metric] &&
+                 metrics.datapoints[metrics.primary_metric].length > 1 && (
+                  <MetricChart
+                    datapoints={metrics.datapoints[metrics.primary_metric]}
+                    baseline={metrics.primary_metric_baseline}
+                    primaryMetric={metrics.primary_metric}
+                    minutesElapsed={metrics.minutes_elapsed}
+                    severity={metrics.severity}
+                  />
+                )}
 
                 <div className="signal-bar">
                   <div className={`signal-status ${
