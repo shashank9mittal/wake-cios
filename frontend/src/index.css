@@ -823,3 +823,137 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.sidebar-tabs {
+  display: flex;
+  padding: 8px 8px 0;
+  border-bottom: 0.5px solid #d2d2d7;
+  gap: 2px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8e8e93;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  text-align: center;
+  margin-bottom: -0.5px;
+}
+
+.sidebar-tab:hover { color: #1d1d1f; }
+
+.sidebar-tab.active {
+  color: #053288;
+  border-bottom-color: #053288;
+  font-weight: 600;
+}
+
+.empty-tab {
+  padding: 24px 16px;
+  font-size: 12px;
+  color: #8e8e93;
+  text-align: center;
+}
+
+.prompt-pulse-list { padding: 8px; }
+
+.prompt-pulse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px 8px;
+  margin-bottom: 4px;
+}
+
+.prompt-pulse-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6d28d9;
+}
+
+.prompt-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6d28d9;
+  animation: pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.prompt-pulse-sub {
+  font-size: 10px;
+  color: #8e8e93;
+}
+
+.prompt-icon {
+  color: #6d28d9;
+  margin-right: 4px;
+  font-size: 11px;
+}
+
+.prompt-change-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.prompt-signal-preview {
+  font-size: 10px;
+  color: #dc2626;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.prompt-explainer {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f0edff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prompt-explainer p {
+  font-size: 11px;
+  color: #6d28d9;
+  line-height: 1.5;
+}
+
+.prompt-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  text-align: center;
+  gap: 8px;
+}
+
+.prompt-empty-icon {
+  font-size: 24px;
+  color: #6d28d9;
+  margin-bottom: 4px;
+}
+
+.prompt-empty-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.prompt-empty-sub {
+  font-size: 11px;
+  color: #8e8e93;
+  line-height: 1.5;
+}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "./services/api";
 import MetricChart from './components/MetricChart'
 import ShimmerLoader from './components/ShimmerLoader'
+import PromptPulse from './components/PromptPulse'
 import type {
   DeployEvent,
   MetricsResponse,
@@ -18,6 +19,7 @@ function App() {
   const [triggering, setTriggering] = useState<string | null>(null);
   const [signalLocked, setSignalLocked] =
     useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'all' | 'prompt'>('all');
 
   // Poll changes every 5 seconds
   const fetchChanges = useCallback(async () => {
@@ -115,27 +117,52 @@ function App() {
           <span className="monitoring-badge">● monitoring</span>
         </div>
         <div className="change-list">
-          <div className="sidebar-section-label">Recent changes</div>
-          {changes.map((change) => (
-            <div
-              key={change.id}
-              className={`change-item ${selected === change.id ? "active" : ""} severity-${change.severity}`}
-              onClick={() => {
-                setSelected(change.id);
-              }}
+          <div className="sidebar-tabs">
+            <button
+              className={`sidebar-tab ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
             >
-              <div className="change-item-left">
-                <div className="change-name">{change.name}</div>
-                <div className="change-meta">{change.service}</div>
-              </div>
-              <div className="change-item-right">
-                <span className={`severity-dot ${change.severity}`}></span>
-                <span className={`change-type-badge ${change.change_type}`}>
-                  {change.change_type.toUpperCase()}
-                </span>
-              </div>
-            </div>
-          ))}
+              All changes
+            </button>
+            <button
+              className={`sidebar-tab ${activeTab === 'prompt' ? 'active' : ''}`}
+              onClick={() => setActiveTab('prompt')}
+            >
+              ◈ Prompt Pulse
+            </button>
+          </div>
+
+          {activeTab === 'all' ? (
+            <>
+              <div className="sidebar-section-label">Recent changes</div>
+              {changes.map((change) => (
+                <div
+                  key={change.id}
+                  className={`change-item ${selected === change.id ? 'active' : ''} severity-${change.severity}`}
+                  onClick={() => setSelected(change.id)}
+                >
+                  <div className="change-item-left">
+                    <div className="change-name">{change.name}</div>
+                    <div className="change-meta">{change.service}</div>
+                  </div>
+                  <div className="change-item-right">
+                    <span className={`severity-dot ${change.severity}`}></span>
+                    <span className={`change-type-badge ${change.change_type}`}>
+                      {change.change_type.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <PromptPulse
+              changes={changes}
+              selected={selected}
+              onSelect={setSelected}
+              investigations={investigations}
+              signalLocked={signalLocked}
+            />
+          )}
         </div>
       </div>
 
