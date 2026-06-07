@@ -28,16 +28,6 @@ export default function PromptPulse({
 
   return (
     <div className="prompt-pulse-list">
-      <div className="prompt-pulse-header">
-        <div className="prompt-pulse-badge">
-          <span className="prompt-pulse-dot"></span>
-          Prompt Pulse
-        </div>
-        <span className="prompt-pulse-sub">
-          Monitoring {promptChanges.length} AI prompt change{promptChanges.length > 1 ? 's' : ''}
-        </span>
-      </div>
-
       {promptChanges.map(change => {
         const inv = investigations[change.id]
         const locked = signalLocked[change.id]
@@ -51,7 +41,6 @@ export default function PromptPulse({
           >
             <div className="change-item-left">
               <div className="prompt-change-label">
-                <span className="prompt-icon">◈</span>
                 <span className="change-name">{change.name}</span>
               </div>
               <div className="change-meta">{change.service} · {change.engineer}</div>
@@ -69,15 +58,14 @@ export default function PromptPulse({
         )
       })}
 
-      <div className="prompt-explainer">
-        <p>
-          Wake monitors AI prompt changes the same way it monitors
-          code deploys — detecting behavioral regressions within minutes.
-        </p>
-        <p>
-          No other observability tool watches prompt changes.
-        </p>
-      </div>
+      <p style={{
+        fontSize: '11px',
+        color: '#8b5cf6',
+        marginTop: '16px',
+        padding: '0 4px'
+      }}>
+        Wake monitors prompt changes the same way it monitors code — no other observability tool does this.
+      </p>
     </div>
   )
 }

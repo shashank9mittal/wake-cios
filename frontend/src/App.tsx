@@ -21,6 +21,7 @@ function App() {
   const [triggering, setTriggering] = useState<string | null>(null);
   const [signalLocked, setSignalLocked] =
     useState<Record<string, boolean>>({});
+  const [config, setConfig] = useState<{team: string} | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'prompt'>('all');
   const [investigateError, setInvestigateError] = useState<Record<string, string>>({});
   const [detectionMinutes, setDetectionMinutes] = useState<Record<string, number>>({});
@@ -37,6 +38,7 @@ function App() {
     // Polling pattern: initial fetch + interval. setState inside is intentional.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchChanges();
+    api.get('/config').then(setConfig);
     const interval = setInterval(fetchChanges, 5000);
     return () => clearInterval(interval);
   }, [fetchChanges]);
@@ -141,7 +143,20 @@ function App() {
         <div className="sidebar-header">
           <div className="logo">
             <div className="logo-mark">W</div>
-            <span>Wake</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span>Wake</span>
+              {config && (
+                <div style={{
+                  fontSize: '10px',
+                  fontFamily: 'SF Mono, monospace',
+                  color: '#8e8e93',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                }}>
+                  {config.team}
+                </div>
+              )}
+            </div>
           </div>
           <span className="monitoring-badge">● monitoring</span>
         </div>

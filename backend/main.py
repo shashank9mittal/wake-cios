@@ -27,6 +27,8 @@ app.add_middleware(
 # Data loading
 # ---------------------------------------------------------------------------
 
+from config import CONFIG
+
 DATA_PATH = Path(__file__).parent / "data" / "scenarios.json"
 raw = json.loads(DATA_PATH.read_text())
 SCENARIOS: dict[str, dict] = {s["id"]: s for s in raw}
@@ -40,6 +42,11 @@ TIME_MULTIPLIER = float(os.getenv("WAKE_TIME_MULTIPLIER", "1.0"))
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/config")
+def get_config():
+    return CONFIG
+
 
 @app.get("/health")
 async def health():

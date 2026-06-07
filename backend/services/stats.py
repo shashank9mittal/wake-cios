@@ -2,13 +2,9 @@ import hashlib
 import random
 import statistics
 from typing import Any
+from config import CONFIG
 
-METRICS = [
-    "checkout_initiation_rate",
-    "cart_abandonment_rate",
-    "session_duration_s",
-    "payment_completion_rate",
-]
+METRICS: list[str] = CONFIG["monitored_metrics"]
 
 
 def _seed(scenario_id: str, *tags) -> int:

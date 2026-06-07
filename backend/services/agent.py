@@ -4,6 +4,7 @@ import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv(Path(__file__).parent.parent / ".env")
+from config import CONFIG
 
 FALLBACK = {
     "signal_detected": False,
@@ -66,6 +67,12 @@ CRITICAL RULES:
   24-48 hours to confirm stability.'
 
 Output ONLY the final JSON. No other text after the JSON."""
+
+SYSTEM_PROMPT = SYSTEM_PROMPT.replace(
+    "26000", str(CONFIG["sessions_per_minute"])
+).replace(
+    "* 47 *", f"* {CONFIG['revenue_per_session']} *"
+)
 
 TOOLS = [
     {

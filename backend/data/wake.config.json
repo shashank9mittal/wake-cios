@@ -1,0 +1,13 @@
+{
+  "team": "Checkout Experience",
+  "service": "checkout-api",
+  "monitored_metrics": [
+    "checkout_initiation_rate",
+    "cart_abandonment_rate",
+    "session_duration_s",
+    "payment_completion_rate"
+  ],
+  "alert_sensitivity": "standard",
+  "revenue_per_session": 47,
+  "sessions_per_minute": 26000
+}
