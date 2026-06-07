@@ -2,7 +2,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
 from services.stats import compute_stats
 from models import (TriggerResponse, MetricsResponse,
                     ChangeEvent, InvestigateRequest, InvestigateResponse)
@@ -29,6 +32,11 @@ raw = json.loads(DATA_PATH.read_text())
 SCENARIOS: dict[str, dict] = {s["id"]: s for s in raw}
 TRIGGERED: dict[str, datetime | None] = {sid: None for sid in SCENARIOS}
 
+# Speed multiplier for demos. Default 1.0 = real time (signal ~8 min).
+# Set WAKE_TIME_MULTIPLIER=16 in .env for a 30-second demo signal.
+# Set WAKE_TIME_MULTIPLIER=1 to restore realistic timing before production.
+TIME_MULTIPLIER = float(os.getenv("WAKE_TIME_MULTIPLIER", "1.0"))
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -50,7 +58,7 @@ async def get_changes():
             severity = "none"
             deployed_at = None
         else:
-            minutes_elapsed = (datetime.now(timezone.utc) - triggered_at).total_seconds() / 60.0
+            minutes_elapsed = (datetime.now(timezone.utc) - triggered_at).total_seconds() / 60.0 * TIME_MULTIPLIER
             stats = compute_stats(scenario, minutes_elapsed)
             raw_severity = stats["severity"]
             outcome = scenario.get("outcome", "clean")
@@ -87,7 +95,7 @@ async def get_metrics(change_id: str):
     scenario = SCENARIOS[change_id]
     minutes_elapsed = (
         datetime.now(timezone.utc) - TRIGGERED[change_id]
-    ).total_seconds() / 60.0
+    ).total_seconds() / 60.0 * TIME_MULTIPLIER
 
     stats = compute_stats(scenario, minutes_elapsed)
 

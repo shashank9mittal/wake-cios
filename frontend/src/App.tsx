@@ -284,7 +284,7 @@ function App() {
                 </div>
 
                 {metrics.datapoints[metrics.primary_metric] &&
-                 metrics.datapoints[metrics.primary_metric].length > 1 && (
+                 metrics.datapoints[metrics.primary_metric].length >= 1 && (
                   <MetricChart
                     datapoints={metrics.datapoints[metrics.primary_metric]}
                     baseline={metrics.primary_metric_baseline}
