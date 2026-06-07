@@ -198,7 +198,19 @@ function App() {
       <div className="main">
         {!selectedChange ? (
           <div className="empty-state">
-            <p>Select a change to investigate</p>
+            <div className="empty-logo-mark">W</div>
+            <h2 className="empty-title">Wake is monitoring</h2>
+            <p className="empty-subtitle">
+              {changes.filter(c => c.deployed_at).length > 0
+                ? `${changes.filter(c => c.deployed_at).length} active deploy${changes.filter(c => c.deployed_at).length > 1 ? 's' : ''} under observation`
+                : `${changes.length} changes ready to monitor`}
+            </p>
+            <div className="empty-services">
+              {[...new Set(changes.map(c => c.service))].map(service => (
+                <span key={service} className="empty-service-tag">{service}</span>
+              ))}
+            </div>
+            <p className="empty-hint">Select a change from the sidebar to begin</p>
           </div>
         ) : (
           <div className="detail">
