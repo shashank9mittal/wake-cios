@@ -9,6 +9,8 @@ import type {
   InvestigateResponse,
 } from "./types";
 
+const HIGHER_IS_WORSE = new Set(['cart_abandonment_rate']);
+
 function App() {
   const [changes, setChanges] = useState<DeployEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -20,6 +22,10 @@ function App() {
   const [signalLocked, setSignalLocked] =
     useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'all' | 'prompt'>('all');
+  const [investigateError, setInvestigateError] = useState<Record<string, string>>({});
+  const [detectionMinutes, setDetectionMinutes] = useState<Record<string, number>>({});
+
+  const selectedChange = changes.find((c) => c.id === selected) || null;
 
   // Poll changes every 5 seconds
   const fetchChanges = useCallback(async () => {
@@ -28,6 +34,8 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Polling pattern: initial fetch + interval. setState inside is intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchChanges();
     const interval = setInterval(fetchChanges, 5000);
     return () => clearInterval(interval);
@@ -36,24 +44,36 @@ function App() {
   // Poll metrics for selected change every 5 seconds
   useEffect(() => {
     if (!selected) return;
-    const selectedChange = changes.find((c) => c.id === selected);
     if (!selectedChange || !selectedChange.deployed_at) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMetrics(null);
       return;
     }
 
+    let cancelled = false;
+
     const fetchMetrics = async () => {
       const data = await api.get(`/metrics/${selected}`);
+      if (cancelled) return;
       setMetrics(data);
       if (data.signal_detected) {
-        setSignalLocked(prev => ({...prev, [selected!]: true}));
+        setSignalLocked(prev => {
+          if (!prev[selected!]) {
+            setDetectionMinutes(dm => ({ ...dm, [selected!]: Math.round(data.minutes_elapsed) }));
+          }
+          return { ...prev, [selected!]: true };
+        });
       }
     };
 
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 5000);
-    return () => clearInterval(interval);
-  }, [selected, changes]);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- depend on primitive deployed_at, not the object (new ref every poll)
+  }, [selected, selectedChange?.deployed_at]);
 
   const handleTrigger = async (id: string) => {
     setTriggering(id);
@@ -85,23 +105,32 @@ function App() {
         delete next[id];
         return next;
       });
+      setInvestigateError(prev => { const n = {...prev}; delete n[id]; return n; });
+      setDetectionMinutes(prev => { const n = {...prev}; delete n[id]; return n; });
     }
   };
 
   const handleInvestigate = async () => {
     if (!selected || !metrics) return;
+    setInvestigateError(prev => { const n = {...prev}; delete n[selected]; return n; });
     setInvestigating(selected);
-    const data = await api.post("/investigate", {
-      scenario_id: selected,
-      stats: metrics,
-    });
-    if (selected) {
+    try {
+      const statsToSend = { ...metrics, signal_detected: metrics.signal_detected || !!signalLocked[selected] };
+      const data = await api.post("/investigate", {
+        scenario_id: selected,
+        stats: statsToSend,
+      });
+      if (!data || data.detail || !data.signal_detected || data.plain_english === 'Analysis unavailable') {
+        setInvestigateError(prev => ({ ...prev, [selected]: 'Investigation failed — click to retry' }));
+        return;
+      }
       setInvestigations(prev => ({...prev, [selected]: data}));
+    } catch {
+      setInvestigateError(prev => ({ ...prev, [selected]: 'Investigation failed — click to retry' }));
+    } finally {
+      setInvestigating(null);
     }
-    setInvestigating(null);
   };
-
-  const selectedChange = changes.find((c) => c.id === selected) || null;
 
   const investigation = selected ? investigations[selected] : null;
   const isSignalLocked = selected ? signalLocked[selected] : false;
@@ -217,8 +246,12 @@ function App() {
                 <div className="metrics-grid">
                   {Object.entries(metrics.all_metrics).map(([key, m]) => {
                     const isSessionDuration = key === 'session_duration_s'
-                    const isNegative = isSessionDuration ? m.delta < 0 : m.delta_pct < 0
-                    const isPositive = isSessionDuration ? m.delta > 0 : m.delta_pct > 0
+                    const isNegative = isSessionDuration
+                      ? m.delta < 0
+                      : HIGHER_IS_WORSE.has(key) ? m.delta_pct > 0 : m.delta_pct < 0;
+                    const isPositive = isSessionDuration
+                      ? false
+                      : HIGHER_IS_WORSE.has(key) ? m.delta_pct < 0 : m.delta_pct > 0;
                     const displayValue = isSessionDuration
                       ? `${Math.round(m.current)}s`
                       : `${(m.current * 100).toFixed(1)}%`
@@ -288,8 +321,7 @@ function App() {
                  !isSignalLocked && metrics && (
                   <div className="monitoring-status">
                     <div className="monitoring-dot"></div>
-                    <span>Wake is monitoring · signal expected in 8–15 min ·{" "}
-                      {Math.round(metrics.minutes_elapsed)} min elapsed</span>
+                    <span>Wake is monitoring · {Math.round(metrics.minutes_elapsed)} min elapsed</span>
                   </div>
                 )}
 
@@ -309,25 +341,30 @@ function App() {
                 <div className="observation-header">
                   <span className="observation-label">Wake observation</span>
                   <span className="observation-time">
-                    {metrics && Math.round(metrics.minutes_elapsed)} min after deploy
+                    {detectionMinutes[selected!] ?? Math.round(metrics?.minutes_elapsed ?? 0)} min after deploy
                   </span>
                 </div>
                 <div className="observation-bullets">
                   {investigation.summary_bullets.map((bullet, i) => (
                     <div key={i} className="observation-bullet">
                       <span className={`bullet-dot ${i === 2 ? 'amber' : 'red'}`}></span>
-                      <span
-                        className="bullet-text"
-                        dangerouslySetInnerHTML={{
-                          __html: bullet.replace(
-                            /\*\*(.*?)\*\*/g,
-                            '<strong>$1</strong>'
-                          ),
-                        }}
-                      />
+                      <span className="bullet-text">
+                        {bullet.split(/\*\*(.*?)\*\*/).map((part, i) =>
+                          i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {investigateError[selectedChange.id] && investigating !== selectedChange.id && (
+              <div className="signal-prompt" style={{ color: '#dc2626' }}>
+                {investigateError[selectedChange.id]}
+                <button className="btn-primary" style={{ marginLeft: 12 }} onClick={handleInvestigate}>
+                  Retry →
+                </button>
               </div>
             )}
 
@@ -344,8 +381,7 @@ function App() {
             )}
 
             {investigation && investigation.signal_detected && (() => {
-              const revenueIsNegative = selectedChange &&
-                (selectedChange.outcome === 'regression')
+              const revenueIsNegative = investigation.revenue_impact_per_hour > 0
               const revenueColor = investigation.signal_detected
                 ? '#dc2626'
                 : '#6b7280'

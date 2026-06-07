@@ -52,7 +52,8 @@ CRITICAL RULES:
 - Write for a non-technical VP audience — no jargon
 - If signal_detected is false: all 3 bullets explain why metrics look normal and no action needed
 - Revenue formula: abs(delta_pct) / 100 * 0.342 * 26000 * 0.31 * 47 * 60
-  For a 9% drop this gives approximately $630K — if your calculation differs, use the formula result
+  At 9% drop: ~$700K/hr. At 8% drop: ~$622K/hr. At 3% drop: ~$233K/hr.
+  Always compute from the actual delta_pct you observe. Do not round to a fixed number.
 - If signal_detected is false in the stats you received,
   your final JSON MUST have signal_detected=false, severity='none',
   revenue_impact_per_hour=0, recommendation='No action needed.'
@@ -191,7 +192,7 @@ async def run_investigation(scenario: dict, stats: dict) -> dict:
     )
 
     messages = [{"role": "user", "content": initial_message}]
-    max_iterations = 5
+    max_iterations = 10
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -270,4 +271,37 @@ async def run_investigation(scenario: dict, stats: dict) -> dict:
         print(f"AGENT ERROR: {e}")
         return FALLBACK
 
+    # Loop exhausted without end_turn — force a final text-only response
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": os.getenv("ANTHROPIC_API_KEY", ""),
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-5",
+                    "max_tokens": 2048,
+                    "system": SYSTEM_PROMPT,
+                    "messages": messages + [{
+                        "role": "user",
+                        "content": "Tool call limit reached. Using evidence gathered so far, output your final JSON diagnosis now. No more tool calls."
+                    }],
+                    # No "tools" key — forces text-only response
+                },
+            )
+            response.raise_for_status()
+            body = response.json()
+            if body.get("stop_reason") == "end_turn":
+                text_parts = [b["text"].strip() for b in body["content"] if b.get("type") == "text" and b.get("text","").strip()]
+                text = "\n".join(text_parts).strip()
+                if text:
+                    import re
+                    match = re.search(r'\{.*\}', text, re.DOTALL)
+                    if match:
+                        return json.loads(match.group(0))
+    except Exception:
+        pass
     return FALLBACK

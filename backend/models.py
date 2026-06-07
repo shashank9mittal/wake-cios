@@ -28,12 +28,6 @@ class MetricsResponse(BaseModel):
     datapoints: dict[str, Any]  # keyed by metric name → list[float]
 
 
-# Request body for POST /analyze — caller specifies which scenario and how far along it is
-class AnalyzeRequest(BaseModel):
-    scenario_id: str
-    minutes_elapsed: float
-
-
 # Single entry in the GET /changes list; status and severity are computed server-side
 class ChangeEvent(BaseModel):
     id: str
@@ -46,7 +40,6 @@ class ChangeEvent(BaseModel):
     change_artifact: str
     primary_metric: str
     deployed_at: Optional[str]  # None until scenario is triggered
-    outcome: str
     affected_segment: str
     status: str  # "idle" | "watching" | "warning" | "critical"
     severity: str  # mirrors MetricsResponse.severity once triggered

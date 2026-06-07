@@ -1,4 +1,4 @@
-import type { DeployEvent, MetricsResponse, InvestigateResponse } from '../types'
+import type { DeployEvent, InvestigateResponse } from '../types'
 
 interface Props {
   changes: DeployEvent[]

@@ -1,3 +1,4 @@
+import hashlib
 import random
 import statistics
 from typing import Any
@@ -8,6 +9,12 @@ METRICS = [
     "session_duration_s",
     "payment_completion_rate",
 ]
+
+
+def _seed(scenario_id: str, *tags) -> int:
+    """Deterministic cross-process seed — not affected by PYTHONHASHSEED."""
+    key = ':'.join([scenario_id] + [str(t) for t in tags])
+    return int(hashlib.md5(key.encode()).hexdigest(), 16) % (2 ** 32)
 
 
 def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
@@ -23,7 +30,7 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
     Step 2 — Post-deploy datapoints:
         Generate one datapoint per minute since the change was triggered.
         The shift is applied gradually via a ramp factor that reaches 1.0
-        at 15 minutes, modelling the reality that traffic-weighted impact
+        at 8 minutes, modelling the reality that traffic-weighted impact
         builds as more sessions hit the new code path.
 
     Step 3 — Z-score (primary metric only):
@@ -51,20 +58,25 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
     for m in METRICS:
         mean = scenario["baseline"][m]
         std = scenario["baseline_stddev"][m]
-        pre[m] = [mean + random.gauss(0, std) for _ in range(30)]
+        rng = random.Random(_seed(scenario['id'], 'pre', m))
+        pre[m] = [mean + rng.gauss(0, std) for _ in range(30)]
 
     # ------------------------------------------------------------------ #
     # Step 2 — Post-deploy datapoints (one per elapsed minute)
     # ------------------------------------------------------------------ #
     n_post = max(1, int(minutes_elapsed))
-    ramp = min(minutes_elapsed / 15.0, 1.0)
 
     post: dict[str, list[float]] = {}
     for m in METRICS:
         mean = scenario["baseline"][m]
         std = scenario["baseline_stddev"][m]
         shift = scenario["shift"][m]
-        post[m] = [mean + (shift * ramp) + random.gauss(0, std * 0.4) for _ in range(n_post)]
+        noise_rng = random.Random(_seed(scenario['id'], 'post', m))
+        noise_pool = [noise_rng.gauss(0, std * 0.4) for _ in range(n_post)]
+        post[m] = [
+            mean + (shift * min((i + 1) / 8.0, 1.0)) + noise_pool[i]
+            for i in range(n_post)
+        ]
 
     # ------------------------------------------------------------------ #
     # Step 3 — Z-score for primary metric only
@@ -90,10 +102,16 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
     else:
         severity = "critical"
 
+    # Severity reflects alert-worthiness, not raw |z|. Non-regression
+    # outcomes (clean / positive / noise) never alert, so never escalate
+    # severity for them — keeps chart color and sidebar consistent.
+    outcome = scenario.get("outcome", "clean")
+    if outcome != "regression":
+        severity = "none"
+
     # ------------------------------------------------------------------ #
     # Step 5 — Signal detection
     # ------------------------------------------------------------------ #
-    outcome = scenario.get("outcome", "clean")
     signal_detected = (outcome == "regression") and (z_abs >= 2.0)
 
     # ------------------------------------------------------------------ #

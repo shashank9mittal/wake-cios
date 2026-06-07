@@ -17,13 +17,17 @@ export default function MetricChart({
 }: Props) {
   const isSessionDuration = primaryMetric === 'session_duration_s'
 
-  const prePoints = useMemo(() =>
-    Array.from({ length: 30 }, (_, i) => ({
+  const prePoints = useMemo(() => {
+    const seededNoise = (i: number) => {
+      const s = Math.sin(i * 127.1 + baseline * 311.7) * 43758.5453;
+      return (s - Math.floor(s)) - 0.5;
+    };
+    return Array.from({ length: 30 }, (_, i) => ({
       minute: -(30 - i),
-      value: baseline + (Math.random() - 0.5) * baseline * 0.02,
+      value: baseline + seededNoise(i) * baseline * 0.02,
       phase: 'pre'
-    }))
-  , [baseline, primaryMetric])
+    }));
+  }, [baseline])
 
   const postPoints = datapoints.map((value, i) => ({
     minute: i + 1,
@@ -31,7 +35,8 @@ export default function MetricChart({
     phase: 'post'
   }))
 
-  const allPoints = [...prePoints, ...postPoints]
+  const deployPoint = { minute: 0, value: baseline, phase: 'deploy' as const };
+  const allPoints = [...prePoints, deployPoint, ...postPoints]
 
   const formatValue = (val: number) =>
     isSessionDuration ? `${Math.round(val)}s` : `${(val * 100).toFixed(1)}%`
@@ -55,12 +60,13 @@ export default function MetricChart({
         <LineChart data={allPoints} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
           <XAxis
+            type="number"
             dataKey="minute"
+            interval="preserveStartEnd"
             tick={{ fontSize: 9, fill: '#8e8e93', fontFamily: 'SF Mono, monospace' }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => v === 0 ? 'deploy' : `${v}m`}
-            interval={9}
           />
           <YAxis
             tick={{ fontSize: 9, fill: '#8e8e93', fontFamily: 'SF Mono, monospace' }}
@@ -87,7 +93,6 @@ export default function MetricChart({
             stroke="#2563eb"
             strokeDasharray="4 3"
             strokeWidth={1.5}
-            label={{ value: 'deploy', position: 'top', fontSize: 9, fill: '#2563eb', fontFamily: 'SF Mono, monospace' }}
           />
           <ReferenceLine
             y={baseline}

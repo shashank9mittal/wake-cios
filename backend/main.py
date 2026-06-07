@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
-import json, os, random
+import json
 from pathlib import Path
 from services.stats import compute_stats
-from models import (TriggerResponse, MetricsResponse, AnalyzeRequest,
+from models import (TriggerResponse, MetricsResponse,
                     ChangeEvent, InvestigateRequest, InvestigateResponse)
 
 # ---------------------------------------------------------------------------
@@ -69,7 +69,6 @@ async def get_changes():
             change_artifact=scenario["change_artifact"],
             primary_metric=scenario["primary_metric"],
             deployed_at=deployed_at,
-            outcome=scenario["outcome"],
             affected_segment=scenario["affected_segment"],
             status=status,
             severity=severity,
@@ -114,23 +113,6 @@ async def trigger_scenario(scenario_id: str):
         triggered_at=now.isoformat(),
         message=f"Scenario {name} triggered. Wake is now monitoring.",
     )
-
-
-@app.post("/analyze")
-async def analyze(body: AnalyzeRequest):
-    """Run Claude analysis on a triggered scenario and return structured findings."""
-    if body.scenario_id not in SCENARIOS:
-        raise HTTPException(status_code=404, detail=f"Scenario '{body.scenario_id}' not found")
-    if TRIGGERED[body.scenario_id] is None:
-        raise HTTPException(status_code=400, detail="Scenario not yet triggered")
-
-    scenario = SCENARIOS[body.scenario_id]
-    minutes_elapsed = body.minutes_elapsed
-    stats = compute_stats(scenario, minutes_elapsed)
-
-    from services.claude import analyze_with_claude
-    result = await analyze_with_claude(scenario, stats)
-    return result
 
 
 @app.post("/investigate", response_model=InvestigateResponse)

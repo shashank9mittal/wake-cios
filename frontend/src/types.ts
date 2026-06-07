@@ -9,7 +9,6 @@ export interface DeployEvent {
   change_artifact: string
   primary_metric: string
   deployed_at: string | null
-  outcome: string
   affected_segment: string
   status: string
   severity: 'none' | 'watch' | 'warning' | 'critical'
