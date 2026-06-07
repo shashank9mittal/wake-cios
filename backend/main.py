@@ -52,7 +52,9 @@ async def get_changes():
         else:
             minutes_elapsed = (datetime.now(timezone.utc) - triggered_at).total_seconds() / 60.0
             stats = compute_stats(scenario, minutes_elapsed)
-            severity = stats["severity"]
+            raw_severity = stats["severity"]
+            outcome = scenario.get("outcome", "clean")
+            severity = raw_severity if outcome == "regression" else "none"
             status = severity if severity != "none" else "watching"
             deployed_at = triggered_at.isoformat()
 

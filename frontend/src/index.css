@@ -715,3 +715,111 @@ body {
   color: #8e8e93;
   font-family: 'SF Mono', 'JetBrains Mono', monospace;
 }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.shimmer-card,
+.shimmer-bar,
+.shimmer-chart {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e8e8e8 50%,
+    #f0f0f0 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+.shimmer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shimmer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.shimmer-card { height: 120px; }
+.shimmer-bar  { height: 52px; }
+.shimmer-chart { height: 168px; }
+
+.monitoring-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0f4ff;
+  border: 0.5px solid #c7d7f9;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #053288;
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  margin-bottom: 12px;
+}
+
+.monitoring-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #053288;
+  animation: pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.signal-prompt {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 0 2px;
+  margin-bottom: 8px;
+}
+
+.investigating-shimmer {
+  background: #ffffff;
+  border: 0.5px solid #d2d2d7;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.investigating-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.investigating-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #053288;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.investigating-header span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #053288;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

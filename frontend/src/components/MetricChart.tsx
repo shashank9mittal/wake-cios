@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer
@@ -16,11 +17,13 @@ export default function MetricChart({
 }: Props) {
   const isSessionDuration = primaryMetric === 'session_duration_s'
 
-  const prePoints = Array.from({ length: 30 }, (_, i) => ({
-    minute: -(30 - i),
-    value: baseline + (Math.random() - 0.5) * baseline * 0.02,
-    phase: 'pre'
-  }))
+  const prePoints = useMemo(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      minute: -(30 - i),
+      value: baseline + (Math.random() - 0.5) * baseline * 0.02,
+      phase: 'pre'
+    }))
+  , [baseline, primaryMetric])
 
   const postPoints = datapoints.map((value, i) => ({
     minute: i + 1,

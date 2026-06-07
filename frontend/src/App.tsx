@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./services/api";
 import MetricChart from './components/MetricChart'
+import ShimmerLoader from './components/ShimmerLoader'
 import type {
   DeployEvent,
   MetricsResponse,
@@ -13,7 +14,7 @@ function App() {
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
   const [investigations, setInvestigations] =
     useState<Record<string, InvestigateResponse>>({});
-  const [investigating, setInvestigating] = useState(false);
+  const [investigating, setInvestigating] = useState<string | null>(null);
   const [triggering, setTriggering] = useState<string | null>(null);
   const [signalLocked, setSignalLocked] =
     useState<Record<string, boolean>>({});
@@ -58,6 +59,11 @@ function App() {
     await fetchChanges();
     setSelected(id);
     setMetrics(null);
+    setSignalLocked(prev => {
+      const next = {...prev};
+      delete next[id];
+      return next;
+    });
     setTriggering(null);
   };
 
@@ -82,7 +88,7 @@ function App() {
 
   const handleInvestigate = async () => {
     if (!selected || !metrics) return;
-    setInvestigating(true);
+    setInvestigating(selected);
     const data = await api.post("/investigate", {
       scenario_id: selected,
       stats: metrics,
@@ -90,7 +96,7 @@ function App() {
     if (selected) {
       setInvestigations(prev => ({...prev, [selected]: data}));
     }
-    setInvestigating(false);
+    setInvestigating(null);
   };
 
   const selectedChange = changes.find((c) => c.id === selected) || null;
@@ -175,6 +181,10 @@ function App() {
               <p>{selectedChange.change_artifact}</p>
             </div>
 
+            {selectedChange.deployed_at && !metrics && (
+              <ShimmerLoader />
+            )}
+
             {metrics && (
               <>
                 <div className="metrics-grid">
@@ -213,8 +223,7 @@ function App() {
                   })}
                 </div>
 
-                {metrics.signal_detected &&
-                 metrics.datapoints[metrics.primary_metric] &&
+                {metrics.datapoints[metrics.primary_metric] &&
                  metrics.datapoints[metrics.primary_metric].length > 1 && (
                   <MetricChart
                     datapoints={metrics.datapoints[metrics.primary_metric]}
@@ -241,12 +250,27 @@ function App() {
                       {metrics.confidence}%
                     </span>
                   </div>
-                  {(metrics.signal_detected || isSignalLocked) && !investigation && !investigating && (
-                    investigating
+                  {(metrics.signal_detected || isSignalLocked) && !investigation && (
+                    investigating === selected
                       ? <span style={{ fontSize: 13, color: '#6b7280' }}>Investigating...</span>
                       : <button className="btn-primary" onClick={handleInvestigate}>Investigate →</button>
                   )}
                 </div>
+
+                {selectedChange.deployed_at && !metrics?.signal_detected &&
+                 !isSignalLocked && metrics && (
+                  <div className="monitoring-status">
+                    <div className="monitoring-dot"></div>
+                    <span>Wake is monitoring · signal expected in 8–15 min ·{" "}
+                      {Math.round(metrics.minutes_elapsed)} min elapsed</span>
+                  </div>
+                )}
+
+                {(metrics?.signal_detected || isSignalLocked) && !investigation && investigating !== selected && (
+                  <div className="signal-prompt">
+                    Behavioral regression detected. Click Investigate for root cause analysis.
+                  </div>
+                )}
               </>
             )}
 
@@ -280,8 +304,21 @@ function App() {
               </div>
             )}
 
+            {investigating === selected && (
+              <div className="investigating-shimmer">
+                <div className="investigating-header">
+                  <div className="investigating-spinner"></div>
+                  <span>Wake is analyzing the signal...</span>
+                </div>
+                <div className="shimmer-bar" style={{height: '80px'}}></div>
+                <div className="shimmer-bar" style={{height: '60px', width: '80%'}}></div>
+                <div className="shimmer-bar" style={{height: '40px', width: '60%'}}></div>
+              </div>
+            )}
+
             {investigation && investigation.signal_detected && (() => {
-              const revenueIsNegative = metrics && metrics.primary_metric_delta < 0
+              const revenueIsNegative = selectedChange &&
+                (selectedChange.outcome === 'regression')
               const revenueColor = investigation.signal_detected
                 ? '#dc2626'
                 : '#6b7280'
