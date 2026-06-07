@@ -102,7 +102,10 @@ function App() {
     <div className="app">
       <div className="sidebar">
         <div className="sidebar-header">
-          <span className="logo">Wake</span>
+          <div className="logo">
+            <div className="logo-mark">W</div>
+            <span>Wake</span>
+          </div>
           <span className="monitoring-badge">● monitoring</span>
         </div>
         <div className="change-list">
@@ -224,20 +227,17 @@ function App() {
 
                 <div className="signal-bar">
                   <div className={`signal-status ${
-                    isSignalLocked
-                      ? 'critical'
-                      : metrics.signal_detected
-                        ? metrics.severity
-                        : metrics.z_score > 2.0
-                          ? 'none'
-                          : 'none'
+                    isSignalLocked ? 'critical'
+                    : metrics.signal_detected && metrics.z_score < 0 ? metrics.severity
+                    : metrics.signal_detected && metrics.z_score > 0 ? 'none'
+                    : 'none'
                   }`}>
                     <span className="signal-label">
                       {metrics.signal_detected || isSignalLocked
-                        ? "⚠ Signal detected"
-                        : metrics.z_score > 2.0
-                          ? "✓ Positive lift detected"
-                          : "✓ Within normal variance"}
+                        ? metrics.z_score > 0
+                          ? "✓ Positive signal detected"
+                          : "⚠ Signal detected"
+                        : "✓ Within normal variance"}
                     </span>
                     <span className="signal-details">
                       z-score {metrics.z_score} · confidence{" "}

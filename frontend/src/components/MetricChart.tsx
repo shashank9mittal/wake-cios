@@ -76,7 +76,7 @@ export default function MetricChart({
               background: '#fff',
               boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}
-            formatter={(value: number) => [formatValue(value), 'value']}
+            formatter={(value) => [formatValue(Number(value)), 'value']}
             labelFormatter={(label) => label === 0 ? 'deploy' : `${label}m`}
           />
           <ReferenceLine
