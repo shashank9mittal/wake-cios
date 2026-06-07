@@ -27,7 +27,7 @@ Investigation process:
 4. Call get_similar_incidents to check for patterns
 5. After gathering evidence, produce your final diagnosis
 
-Final diagnosis must be valid JSON matching exactly:
+Return ONLY valid JSON matching this exact schema:
 {
   "signal_detected": bool,
   "confidence": int,
@@ -36,16 +36,33 @@ Final diagnosis must be valid JSON matching exactly:
     {"cause": str, "evidence": str, "confidence_pct": int}
   ],
   "plain_english": str,
+  "summary_bullets": [
+    "**Key insight 1**: explanation in plain English for a VP",
+    "**Key insight 2**: what the pattern means across all metrics",
+    "**Confidence note**: why to trust or not trust this signal"
+  ],
   "revenue_impact_per_hour": float,
   "recommendation": str,
-  "severity": str
+  "severity": str — must be exactly one of: none, watch, warning, critical
 }
 
-Revenue formula: abs(delta_pct) / 100 * 0.31 * 26000 * 60 * 47
-
-CRITICAL: If signal_detected is false in the stats you received,
-your final JSON MUST have signal_detected=false, severity='none',
-revenue_impact_per_hour=0, recommendation='No action needed.'
+CRITICAL RULES:
+- summary_bullets must always have exactly 3 strings
+- Each string starts with **bold key point** followed by explanation
+- Write for a non-technical VP audience — no jargon
+- If signal_detected is false: all 3 bullets explain why metrics look normal and no action needed
+- Revenue formula: abs(delta_pct) / 100 * 0.342 * 26000 * 0.31 * 47 * 60
+  For a 9% drop this gives approximately $630K — if your calculation differs, use the formula result
+- If signal_detected is false in the stats you received,
+  your final JSON MUST have signal_detected=false, severity='none',
+  revenue_impact_per_hour=0, recommendation='No action needed.'
+- If primary_metric_delta is POSITIVE (checkout going UP),
+  this is a POSITIVE outcome. Set severity to 'none',
+  signal_detected to false, and revenue_impact_per_hour
+  to 0. The plain_english should explain the improvement
+  but the alert system should NOT fire for positive changes.
+  Recommendation should be: 'No action needed. Monitor for
+  24-48 hours to confirm stability.'
 
 Output ONLY the final JSON. No other text after the JSON."""
 

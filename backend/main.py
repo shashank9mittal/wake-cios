@@ -141,6 +141,29 @@ async def investigate(body: InvestigateRequest):
 
     from services.agent import run_investigation
     result = await run_investigation(scenario, body.stats)
+
+    SEVERITY_MAP = {
+        "high": "critical",
+        "medium": "warning",
+        "low": "watch",
+        "none": "none",
+        "watch": "watch",
+        "warning": "warning",
+        "critical": "critical",
+    }
+
+    if isinstance(result, dict):
+        result["severity"] = SEVERITY_MAP.get(
+            result.get("severity", "none"), "none"
+        )
+
+    from services.claude import generate_summary_bullets
+
+    if isinstance(result, dict) and result.get("signal_detected"):
+        bullets = await generate_summary_bullets(scenario, body.stats, result)
+        if bullets:
+            result["summary_bullets"] = bullets
+
     return result
 
 

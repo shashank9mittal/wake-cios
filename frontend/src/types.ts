@@ -48,4 +48,5 @@ export interface InvestigateResponse {
   revenue_impact_per_hour: number
   recommendation: string
   severity: string
+  summary_bullets: string[]
 }
