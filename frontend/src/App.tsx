@@ -10,10 +10,12 @@ function App() {
   const [changes, setChanges] = useState<DeployEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
-  const [investigation, setInvestigation] =
-    useState<InvestigateResponse | null>(null);
+  const [investigations, setInvestigations] =
+    useState<Record<string, InvestigateResponse>>({});
   const [investigating, setInvestigating] = useState(false);
   const [triggering, setTriggering] = useState<string | null>(null);
+  const [signalLocked, setSignalLocked] =
+    useState<Record<string, boolean>>({});
 
   // Poll changes every 5 seconds
   const fetchChanges = useCallback(async () => {
@@ -31,11 +33,17 @@ function App() {
   useEffect(() => {
     if (!selected) return;
     const selectedChange = changes.find((c) => c.id === selected);
-    if (!selectedChange || !selectedChange.deployed_at) return;
+    if (!selectedChange || !selectedChange.deployed_at) {
+      setMetrics(null);
+      return;
+    }
 
     const fetchMetrics = async () => {
       const data = await api.get(`/metrics/${selected}`);
       setMetrics(data);
+      if (data.signal_detected) {
+        setSignalLocked(prev => ({...prev, [selected!]: true}));
+      }
     };
 
     fetchMetrics();
@@ -49,7 +57,6 @@ function App() {
     await fetchChanges();
     setSelected(id);
     setMetrics(null);
-    setInvestigation(null);
     setTriggering(null);
   };
 
@@ -59,7 +66,16 @@ function App() {
     if (selected === id) {
       setSelected(null);
       setMetrics(null);
-      setInvestigation(null);
+      setInvestigations(prev => {
+        const next = {...prev};
+        delete next[id];
+        return next;
+      });
+      setSignalLocked(prev => {
+        const next = {...prev};
+        delete next[id];
+        return next;
+      });
     }
   };
 
@@ -70,11 +86,16 @@ function App() {
       scenario_id: selected,
       stats: metrics,
     });
-    setInvestigation(data);
+    if (selected) {
+      setInvestigations(prev => ({...prev, [selected]: data}));
+    }
     setInvestigating(false);
   };
 
   const selectedChange = changes.find((c) => c.id === selected) || null;
+
+  const investigation = selected ? investigations[selected] : null;
+  const isSignalLocked = selected ? signalLocked[selected] : false;
 
   return (
     <div className="app">
@@ -84,22 +105,24 @@ function App() {
           <span className="monitoring-badge">● monitoring</span>
         </div>
         <div className="change-list">
+          <div className="sidebar-section-label">Recent changes</div>
           {changes.map((change) => (
             <div
               key={change.id}
               className={`change-item ${selected === change.id ? "active" : ""} severity-${change.severity}`}
               onClick={() => {
                 setSelected(change.id);
-                setInvestigation(null);
               }}
             >
-              <div className="change-item-top">
-                <span className="change-type-badge">{change.change_type}</span>
-                <span className={`severity-dot ${change.severity}`}></span>
+              <div className="change-item-left">
+                <div className="change-name">{change.name}</div>
+                <div className="change-meta">{change.service}</div>
               </div>
-              <div className="change-name">{change.name}</div>
-              <div className="change-meta">
-                {change.service} · {change.engineer}
+              <div className="change-item-right">
+                <span className={`severity-dot ${change.severity}`}></span>
+                <span className={`change-type-badge ${change.change_type}`}>
+                  {change.change_type.toUpperCase()}
+                </span>
               </div>
             </div>
           ))}
@@ -151,41 +174,64 @@ function App() {
             {metrics && (
               <>
                 <div className="metrics-grid">
-                  {Object.entries(metrics.all_metrics).map(([key, m]) => (
-                    <div
-                      key={key}
-                      className={`metric-card ${Math.abs(m.delta_pct) > 1 ? (m.delta_pct < 0 ? "negative" : "positive") : ""}`}
-                    >
-                      <div className="metric-label">
-                        {key.replace(/_/g, " ")}
+                  {Object.entries(metrics.all_metrics).map(([key, m]) => {
+                    const isSessionDuration = key === 'session_duration_s'
+                    const isNegative = isSessionDuration ? m.delta < 0 : m.delta_pct < 0
+                    const isPositive = isSessionDuration ? m.delta > 0 : m.delta_pct > 0
+                    const displayValue = isSessionDuration
+                      ? `${Math.round(m.current)}s`
+                      : `${(m.current * 100).toFixed(1)}%`
+                    const displayDelta = isSessionDuration
+                      ? `${m.delta > 0 ? '+' : ''}${Math.round(m.delta)}s from baseline`
+                      : `${m.delta_pct > 0 ? '+' : ''}${m.delta_pct.toFixed(1)}% from baseline`
+                    const descriptions: Record<string, string> = {
+                      checkout_initiation_rate: 'Sessions where users started the checkout flow',
+                      cart_abandonment_rate: 'Users who left without completing their purchase',
+                      session_duration_s: 'Average time a user spends per session on site',
+                      payment_completion_rate: 'Customers who finished payment after starting checkout',
+                    }
+                    return (
+                      <div
+                        key={key}
+                        className={`metric-card ${isNegative ? 'negative' : ''} ${isPositive ? 'positive' : ''}`}
+                      >
+                        <div className="metric-label">
+                          {key.replace(/_/g, ' ').replace(' s', '').toUpperCase()}
+                        </div>
+                        <div className="metric-value">{displayValue}</div>
+                        <div className="metric-delta">{displayDelta}</div>
+                        <div className="metric-divider"></div>
+                        <div className="metric-description">
+                          {descriptions[key] || key}
+                        </div>
                       </div>
-                      <div className="metric-value">
-                        {key === 'session_duration_s'
-                          ? `${Math.round(m.current)}s`
-                          : `${(m.current * 100).toFixed(1)}%`}
-                      </div>
-                      <div className="metric-delta">
-                        {key === 'session_duration_s'
-                          ? `${m.delta > 0 ? '+' : ''}${Math.round(m.delta)}s`
-                          : `${m.delta_pct > 0 ? '+' : ''}${m.delta_pct.toFixed(1)}%`}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <div className="signal-bar">
-                  <div className={`signal-status ${metrics.severity}`}>
+                  <div className={`signal-status ${
+                    isSignalLocked
+                      ? 'critical'
+                      : metrics.signal_detected
+                        ? metrics.severity
+                        : metrics.z_score > 2.0
+                          ? 'none'
+                          : 'none'
+                  }`}>
                     <span className="signal-label">
-                      {metrics.signal_detected
+                      {metrics.signal_detected || isSignalLocked
                         ? "⚠ Signal detected"
-                        : "✓ Within normal variance"}
+                        : metrics.z_score > 2.0
+                          ? "✓ Positive lift detected"
+                          : "✓ Within normal variance"}
                     </span>
                     <span className="signal-details">
                       z-score {metrics.z_score} · confidence{" "}
                       {metrics.confidence}%
                     </span>
                   </div>
-                  {metrics.signal_detected && !investigation && (
+                  {(metrics.signal_detected || isSignalLocked) && !investigation && !investigating && (
                     investigating
                       ? <span style={{ fontSize: 13, color: '#6b7280' }}>Investigating...</span>
                       : <button className="btn-primary" onClick={handleInvestigate}>Investigate →</button>
@@ -194,28 +240,55 @@ function App() {
               </>
             )}
 
-            {investigation && (
+            {investigation &&
+             investigation.signal_detected &&
+             investigation.summary_bullets &&
+             investigation.summary_bullets.length > 0 && (
+              <div className="observation-card">
+                <div className="observation-header">
+                  <span className="observation-label">Wake observation</span>
+                  <span className="observation-time">
+                    {metrics && Math.round(metrics.minutes_elapsed)} min after deploy
+                  </span>
+                </div>
+                <div className="observation-bullets">
+                  {investigation.summary_bullets.map((bullet, i) => (
+                    <div key={i} className="observation-bullet">
+                      <span className={`bullet-dot ${i === 2 ? 'amber' : 'red'}`}></span>
+                      <span
+                        className="bullet-text"
+                        dangerouslySetInnerHTML={{
+                          __html: bullet.replace(
+                            /\*\*(.*?)\*\*/g,
+                            '<strong>$1</strong>'
+                          ),
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {investigation && investigation.signal_detected && (() => {
+              const revenueIsNegative = metrics && metrics.primary_metric_delta < 0
+              const revenueColor = investigation.severity === 'none'
+                ? '#6b7280'
+                : revenueIsNegative
+                  ? '#dc2626'
+                  : '#6b7280'
+              const revenuePrefix = revenueIsNegative ? '−' : ''
+              const revenueDisplay = investigation.revenue_impact_per_hour === 0
+                ? 'No revenue impact'
+                : `${revenuePrefix}$${Math.abs(investigation.revenue_impact_per_hour)
+                    .toLocaleString('en-US', { maximumFractionDigits: 0 })}/hr`
+              return (
               <div className={`investigation-card ${investigation.severity}`}>
                 <div className="inv-header">
-                  <div
-                    className="inv-revenue"
-                    style={{
-                      color: investigation.severity === 'none'
-                        ? '#6b7280'
-                        : metrics.primary_metric_delta < 0
-                        ? '#ef4444'
-                        : '#22c55e'
-                    }}
-                  >
-                    {investigation.severity === 'none'
-                      ? 'No revenue impact'
-                      : `${metrics.primary_metric_delta < 0 ? '−' : '+'}$${Math.abs(
-                          investigation.revenue_impact_per_hour
-                        ).toLocaleString('en-US', { maximumFractionDigits: 0 })}/hr`}
+                  <div className="inv-revenue" style={{ color: revenueColor }}>
+                    {revenueDisplay}
                   </div>
-                  <div
-                    className={`inv-severity-badge ${investigation.severity}`}
-                  >
+                  <div className={`inv-severity-badge ${investigation.severity}`}>
                     {investigation.severity.toUpperCase()}
                   </div>
                 </div>
@@ -242,6 +315,16 @@ function App() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+              )
+            })()}
+
+            {investigation && !investigation.signal_detected && (
+              <div className="signal-bar">
+                <div className="signal-status none">
+                  <span className="signal-label">✓ Deploy looks clean</span>
+                  <span className="signal-details">No behavioral regression detected</span>
                 </div>
               </div>
             )}

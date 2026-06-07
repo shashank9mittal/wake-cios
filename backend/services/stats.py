@@ -93,7 +93,7 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
     # ------------------------------------------------------------------ #
     # Step 5 — Signal detection
     # ------------------------------------------------------------------ #
-    signal_detected = z_abs >= 2.0
+    signal_detected = z_score <= -2.0
 
     # ------------------------------------------------------------------ #
     # Confidence (0-100) derived from |z|
