@@ -228,15 +228,12 @@ function App() {
                 <div className="signal-bar">
                   <div className={`signal-status ${
                     isSignalLocked ? 'critical'
-                    : metrics.signal_detected && metrics.z_score < 0 ? metrics.severity
-                    : metrics.signal_detected && metrics.z_score > 0 ? 'none'
+                    : metrics.signal_detected ? metrics.severity
                     : 'none'
                   }`}>
                     <span className="signal-label">
                       {metrics.signal_detected || isSignalLocked
-                        ? metrics.z_score > 0
-                          ? "✓ Positive signal detected"
-                          : "⚠ Signal detected"
+                        ? "⚠ Signal detected"
                         : "✓ Within normal variance"}
                     </span>
                     <span className="signal-details">
@@ -285,11 +282,9 @@ function App() {
 
             {investigation && investigation.signal_detected && (() => {
               const revenueIsNegative = metrics && metrics.primary_metric_delta < 0
-              const revenueColor = investigation.severity === 'none'
-                ? '#6b7280'
-                : revenueIsNegative
-                  ? '#dc2626'
-                  : '#6b7280'
+              const revenueColor = investigation.signal_detected
+                ? '#dc2626'
+                : '#6b7280'
               const revenuePrefix = revenueIsNegative ? '−' : ''
               const revenueDisplay = investigation.revenue_impact_per_hour === 0
                 ? 'No revenue impact'
@@ -332,15 +327,6 @@ function App() {
               </div>
               )
             })()}
-
-            {investigation && !investigation.signal_detected && (
-              <div className="signal-bar">
-                <div className="signal-status none">
-                  <span className="signal-label">✓ Deploy looks clean</span>
-                  <span className="signal-details">No behavioral regression detected</span>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
