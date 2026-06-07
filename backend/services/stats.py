@@ -64,7 +64,7 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
         mean = scenario["baseline"][m]
         std = scenario["baseline_stddev"][m]
         shift = scenario["shift"][m]
-        post[m] = [mean + (shift * ramp) + random.gauss(0, std) for _ in range(n_post)]
+        post[m] = [mean + (shift * ramp) + random.gauss(0, std * 0.4) for _ in range(n_post)]
 
     # ------------------------------------------------------------------ #
     # Step 3 — Z-score for primary metric only
