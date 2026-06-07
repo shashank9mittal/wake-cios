@@ -222,7 +222,7 @@
       "payment_completion_rate": 0.009
     },
     "shift": {
-      "checkout_initiation_rate": 0.009,
+      "checkout_initiation_rate": -0.006,
       "cart_abandonment_rate": -0.007,
       "session_duration_s": 3.0,
       "payment_completion_rate": 0.005
