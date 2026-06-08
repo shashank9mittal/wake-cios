@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "./services/api";
 import MetricChart from './components/MetricChart'
 import ShimmerLoader from './components/ShimmerLoader'
@@ -25,6 +25,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<'all' | 'prompt'>('all');
   const [investigateError, setInvestigateError] = useState<Record<string, string>>({});
   const [detectionMinutes, setDetectionMinutes] = useState<Record<string, number>>({});
+
+  const pollingRef = useRef<Record<string, ReturnType<typeof setInterval>>>({})
 
   const selectedChange = changes.find((c) => c.id === selected) || null;
 
@@ -66,13 +68,27 @@ function App() {
           return { ...prev, [selected!]: true };
         });
       }
+      if (data.minutes_elapsed >= 60) {
+        if (pollingRef.current[selected!]) {
+          clearInterval(pollingRef.current[selected!])
+          delete pollingRef.current[selected!]
+        }
+      }
     };
 
     fetchMetrics();
+    if (pollingRef.current[selected]) {
+      clearInterval(pollingRef.current[selected])
+      delete pollingRef.current[selected]
+    }
     const interval = setInterval(fetchMetrics, 5000);
+    pollingRef.current[selected] = interval;
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (pollingRef.current[selected]) {
+        clearInterval(pollingRef.current[selected])
+        delete pollingRef.current[selected]
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- depend on primitive deployed_at, not the object (new ref every poll)
   }, [selected, selectedChange?.deployed_at]);
@@ -92,6 +108,10 @@ function App() {
   };
 
   const handleReset = async (id: string) => {
+    if (pollingRef.current[id]) {
+      clearInterval(pollingRef.current[id])
+      delete pollingRef.current[id]
+    }
     await api.post(`/reset/${id}`);
     await fetchChanges();
     if (selected === id) {
@@ -127,6 +147,10 @@ function App() {
         return;
       }
       setInvestigations(prev => ({...prev, [selected]: data}));
+      if (selected && pollingRef.current[selected]) {
+        clearInterval(pollingRef.current[selected])
+        delete pollingRef.current[selected]
+      }
     } catch {
       setInvestigateError(prev => ({ ...prev, [selected]: 'Investigation failed — click to retry' }));
     } finally {
