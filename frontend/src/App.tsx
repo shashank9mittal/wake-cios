@@ -11,6 +11,12 @@ import type {
 
 const HIGHER_IS_WORSE = new Set(['cart_abandonment_rate']);
 
+const BADGE_ICONS: Record<string, string> = {
+  code: '</> ',
+  prompt: '✦ ',
+  config: '⚙ ',
+};
+
 function App() {
   const [changes, setChanges] = useState<DeployEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -161,6 +167,13 @@ function App() {
   const investigation = selected ? investigations[selected] : null;
   const isSignalLocked = selected ? signalLocked[selected] : false;
 
+  const getItemBorderColor = (change: DeployEvent) => {
+    if (signalLocked[change.id]) return '#dc2626'
+    if (change.deployed_at && change.severity === 'none') return '#16a34a'
+    if (selected === change.id) return '#e5e7eb'
+    return 'transparent'
+  };
+
   return (
     <div className="app">
       <div className="sidebar">
@@ -212,6 +225,7 @@ function App() {
                   key={change.id}
                   className={`change-item ${selected === change.id ? 'active' : ''} severity-${change.severity}`}
                   onClick={() => setSelected(change.id)}
+                  style={{ borderLeft: `3px solid ${getItemBorderColor(change)}`, paddingLeft: '12px' }}
                 >
                   <div className="change-item-left">
                     <div className="change-name">{change.name}</div>
@@ -220,7 +234,7 @@ function App() {
                   <div className="change-item-right">
                     <span className={`severity-dot ${change.severity}`}></span>
                     <span className={`change-type-badge ${change.change_type}`}>
-                      {change.change_type.toUpperCase()}
+                      {BADGE_ICONS[change.change_type] ?? ''}{change.change_type.toUpperCase()}
                     </span>
                   </div>
                 </div>
