@@ -5,10 +5,16 @@ import json
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+
 load_dotenv(Path(__file__).parent / ".env")
 from services.stats import compute_stats
-from models import (TriggerResponse, MetricsResponse,
-                    ChangeEvent, InvestigateRequest, InvestigateResponse)
+from models import (
+    TriggerResponse,
+    MetricsResponse,
+    ChangeEvent,
+    InvestigateRequest,
+    InvestigateResponse,
+)
 
 # ---------------------------------------------------------------------------
 # App setup
@@ -43,6 +49,7 @@ TIME_MULTIPLIER = float(os.getenv("WAKE_TIME_MULTIPLIER", "1.0"))
 # Endpoints
 # ---------------------------------------------------------------------------
 
+
 @app.get("/config")
 def get_config():
     return CONFIG
@@ -65,7 +72,11 @@ async def get_changes():
             severity = "none"
             deployed_at = None
         else:
-            minutes_elapsed = (datetime.now(timezone.utc) - triggered_at).total_seconds() / 60.0 * TIME_MULTIPLIER
+            minutes_elapsed = (
+                (datetime.now(timezone.utc) - triggered_at).total_seconds()
+                / 60.0
+                * TIME_MULTIPLIER
+            )
             stats = compute_stats(scenario, minutes_elapsed)
             raw_severity = stats["severity"]
             outcome = scenario.get("outcome", "clean")
@@ -73,21 +84,23 @@ async def get_changes():
             status = severity if severity != "none" else "watching"
             deployed_at = triggered_at.isoformat()
 
-        events.append(ChangeEvent(
-            id=scenario["id"],
-            name=scenario["name"],
-            service=scenario["service"],
-            engineer=scenario["engineer"],
-            team=scenario["team"],
-            surface=scenario["surface"],
-            change_type=scenario["change_type"],
-            change_artifact=scenario["change_artifact"],
-            primary_metric=scenario["primary_metric"],
-            deployed_at=deployed_at,
-            affected_segment=scenario["affected_segment"],
-            status=status,
-            severity=severity,
-        ))
+        events.append(
+            ChangeEvent(
+                id=scenario["id"],
+                name=scenario["name"],
+                service=scenario["service"],
+                engineer=scenario["engineer"],
+                team=scenario["team"],
+                surface=scenario["surface"],
+                change_type=scenario["change_type"],
+                change_artifact=scenario["change_artifact"],
+                primary_metric=scenario["primary_metric"],
+                deployed_at=deployed_at,
+                affected_segment=scenario["affected_segment"],
+                status=status,
+                severity=severity,
+            )
+        )
     return events
 
 
@@ -101,8 +114,10 @@ async def get_metrics(change_id: str):
 
     scenario = SCENARIOS[change_id]
     minutes_elapsed = (
-        datetime.now(timezone.utc) - TRIGGERED[change_id]
-    ).total_seconds() / 60.0 * TIME_MULTIPLIER
+        (datetime.now(timezone.utc) - TRIGGERED[change_id]).total_seconds()
+        / 60.0
+        * TIME_MULTIPLIER
+    )
 
     stats = compute_stats(scenario, minutes_elapsed)
 
@@ -117,7 +132,9 @@ async def get_metrics(change_id: str):
 async def trigger_scenario(scenario_id: str):
     """Mark a scenario as deployed now and begin monitoring the clock."""
     if scenario_id not in SCENARIOS:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found"
+        )
 
     now = datetime.now(timezone.utc)
     TRIGGERED[scenario_id] = now
@@ -134,11 +151,14 @@ async def trigger_scenario(scenario_id: str):
 async def investigate(body: InvestigateRequest):
     """Run the ReAct investigation agent and return a structured diagnosis."""
     if body.scenario_id not in SCENARIOS:
-        raise HTTPException(status_code=404, detail=f"Scenario '{body.scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{body.scenario_id}' not found"
+        )
 
     scenario = SCENARIOS[body.scenario_id]
 
     from services.agent import run_investigation
+
     result = await run_investigation(scenario, body.stats)
 
     SEVERITY_MAP = {
@@ -152,9 +172,7 @@ async def investigate(body: InvestigateRequest):
     }
 
     if isinstance(result, dict):
-        result["severity"] = SEVERITY_MAP.get(
-            result.get("severity", "none"), "none"
-        )
+        result["severity"] = SEVERITY_MAP.get(result.get("severity", "none"), "none")
 
     SEGMENT_PCT = {
         "Mobile iOS": 0.31,
@@ -162,16 +180,8 @@ async def investigate(body: InvestigateRequest):
         "None": 0.0,
     }
     pct = SEGMENT_PCT.get(scenario.get("affected_segment", "None"), 0.0)
-    result["affected_users_count"] = int(
-        CONFIG["sessions_per_minute"] * 60 * pct
-    )
+    result["affected_users_count"] = int(CONFIG["sessions_per_minute"] * 60 * pct)
 
-    from services.claude import generate_summary_bullets
-
-    if isinstance(result, dict) and result.get("signal_detected"):
-        bullets = await generate_summary_bullets(scenario, body.stats, result)
-        if bullets:
-            result["summary_bullets"] = bullets
 
     return result
 
@@ -180,7 +190,9 @@ async def investigate(body: InvestigateRequest):
 async def reset_scenario(scenario_id: str):
     """Clear the trigger timestamp for a scenario so it can be re-triggered in demos."""
     if scenario_id not in SCENARIOS:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Scenario '{scenario_id}' not found"
+        )
 
     TRIGGERED[scenario_id] = None
     return {"message": "Reset complete"}

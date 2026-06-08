@@ -199,6 +199,10 @@ async def run_investigation(scenario: dict, stats: dict) -> dict:
         f"Use your tools to investigate then return the JSON diagnosis."
     )
 
+    context = scenario.get("context_for_claude", "")
+    if context:
+        initial_message += f"\n\nContext from the engineering team:\n{context}"
+
     messages = [{"role": "user", "content": initial_message}]
     max_iterations = 10
 
