@@ -14,11 +14,11 @@ When a deploy silently degrades customer behavior — checkout conversion dips, 
 
 Why? Because the tools we have answer the wrong questions:
 
-| Tool | Answers | Doesn't answer |
-|---|---|---|
-| APM / Splunk / Grafana | "Is the service healthy?" | "Are customers behaving differently?" |
-| A/B testing platforms | "Which variant wins?" (planned changes) | "Did this _unplanned_ deploy hurt us?" |
-| Weekly business reviews | "What happened last week?" | Anything in real time |
+| Tool                    | Answers                                 | Doesn't answer                         |
+| ----------------------- | --------------------------------------- | -------------------------------------- |
+| APM / Splunk / Grafana  | "Is the service healthy?"               | "Are customers behaving differently?"  |
+| A/B testing platforms   | "Which variant wins?" (planned changes) | "Did this _unplanned_ deploy hurt us?" |
+| Weekly business reviews | "What happened last week?"              | Anything in real time                  |
 
 A deploy can be **technically green and behaviorally broken**. 200s across the board, latency flat — and checkout conversion down 12%. That gap is where the $340K/hour lives.
 
@@ -40,14 +40,14 @@ Regression detected and explained in **~8 minutes** instead of surfacing in a 7-
 
 ## Wake vs. Existing Tools
 
-| | Wake | Datadog | LaunchDarkly | Weekly Review |
-|---|---|---|---|---|
-| Detects behavioral regressions | ✅ | ❌ (infra only) | ⚠️ (flagged changes only) | ✅ (7 days later) |
-| Correlates to specific deploy | ✅ | ❌ | ✅ | ❌ |
-| Revenue impact estimate | ✅ | ❌ | ❌ | Sometimes |
-| AI prompt changes as first-class events | ✅ | ❌ | ❌ | ❌ |
-| Noise-immune (no false alarms) | ✅ | ❌ | ❌ | ✅ |
-| Time to detection | ~8 min | N/A | Minutes (known flags only) | ~7 days |
+|                                         | Wake   | Datadog         | LaunchDarkly               | Weekly Review     |
+| --------------------------------------- | ------ | --------------- | -------------------------- | ----------------- |
+| Detects behavioral regressions          | ✅     | ❌ (infra only) | ⚠️ (flagged changes only)  | ✅ (7 days later) |
+| Correlates to specific deploy           | ✅     | ❌              | ✅                         | ❌                |
+| Revenue impact estimate                 | ✅     | ❌              | ❌                         | Sometimes         |
+| AI prompt changes as first-class events | ✅     | ❌              | ❌                         | ❌                |
+| Noise-immune (no false alarms)          | ✅     | ❌              | ❌                         | ✅                |
+| Time to detection                       | ~8 min | N/A             | Minutes (known flags only) | ~7 days           |
 
 ---
 
@@ -87,15 +87,15 @@ When a signal fires, a **ReAct loop powered by Claude (claude-sonnet-4-5)** inve
 
 Wake ships with 7 scripted scenarios that exercise every path of the engine:
 
-| # | Scenario | Type | Outcome |
-|---|---|---|---|
-| 001 | Checkout regression | Code deploy | 🔴 Signals ~min 8 · ~$700K/hr |
-| 002 | Search deploy, clean | Code deploy | 🟢 Never signals |
-| 003 | Recommendations improvement | Code deploy | 🟢 Positive drift, no alert |
-| 004 | Cart abandonment regression | Code deploy | 🔴 Signals ~min 10 |
-| 005 | Prompt regression | **Prompt update** | 🔴 Signals ~min 8 · Prompt Pulse |
-| 006 | Homepage deploy, clean | Config | 🟢 Never signals |
-| 007 | Checkout **decoy** — noisy but healthy | Code deploy | ⚪ **Never alerts** — the point |
+| #   | Scenario                               | Type              | Outcome                          |
+| --- | -------------------------------------- | ----------------- | -------------------------------- |
+| 001 | Checkout regression                    | Code deploy       | 🔴 Signals ~min 8 · ~$700K/hr    |
+| 002 | Search deploy, clean                   | Code deploy       | 🟢 Never signals                 |
+| 003 | Recommendations improvement            | Code deploy       | 🟢 Positive drift, no alert      |
+| 004 | Cart abandonment regression            | Code deploy       | 🔴 Signals ~min 10               |
+| 005 | Prompt regression                      | **Prompt update** | 🔴 Signals ~min 8 · Prompt Pulse |
+| 006 | Homepage deploy, clean                 | Config            | 🟢 Never signals                 |
+| 007 | Checkout **decoy** — noisy but healthy | Code deploy       | ⚪ **Never alerts** — the point  |
 
 **Scenario 007** is the heart of the pitch: a deploy where the checkout metric dips below baseline — exactly what a threshold alert would page on. Wake stays silent because statistically, the movement is within normal variance. **No false alarms is a feature, not a gap.**
 
@@ -121,7 +121,7 @@ git clone https://github.com/shashank9mittal/wake-cios && cd wake-cios
 # 2. Backend
 cd backend
 echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
-echo "TIME_MULTIPLIER=16" >> .env        # 30-second demo signals (set to 1 for real-time)
+echo "WAKE_TIME_MULTIPLIER=16" >> .env        # 30-second demo signals (set to 1 for real-time)
 pip install fastapi uvicorn httpx python-dotenv
 uvicorn main:app --port 8000 --reload
 
@@ -131,6 +131,7 @@ cd frontend && npm install && npm run dev
 ```
 
 **Run a demo:**
+
 ```bash
 # Trigger the checkout regression scenario
 curl -X POST localhost:8000/trigger/deploy-001
@@ -140,6 +141,7 @@ curl -X POST localhost:8000/trigger/deploy-001
 ```
 
 **Reset everything:**
+
 ```bash
 for id in deploy-001 deploy-002 deploy-003 deploy-004 deploy-005 deploy-006 deploy-007; do
   curl -X POST localhost:8000/reset/$id
@@ -157,7 +159,12 @@ Edit `backend/wake.config.json` to point Wake at any service:
 {
   "team": "Checkout Experience",
   "service": "checkout-api",
-  "monitored_metrics": ["checkout_initiation_rate", "cart_abandonment_rate", "session_duration_s", "payment_completion_rate"],
+  "monitored_metrics": [
+    "checkout_initiation_rate",
+    "cart_abandonment_rate",
+    "session_duration_s",
+    "payment_completion_rate"
+  ],
   "alert_sensitivity": "standard",
   "revenue_per_session": 47,
   "sessions_per_minute": 26000
@@ -170,15 +177,15 @@ Edit `backend/wake.config.json` to point Wake at any service:
 
 ## API Reference
 
-| Endpoint | Method | What it does |
-|---|---|---|
-| `/health` | GET | Server health + scenarios loaded |
-| `/changes` | GET | All change events with current severity |
-| `/metrics/{scenario_id}` | GET | Live behavioral metrics for a scenario |
-| `/trigger/{scenario_id}` | POST | Start monitoring a scenario |
-| `/investigate` | POST | Run AI investigation on an active signal |
-| `/reset/{scenario_id}` | POST | Reset a scenario to idle |
-| `/config` | GET | Current wake.config.json values |
+| Endpoint                 | Method | What it does                             |
+| ------------------------ | ------ | ---------------------------------------- |
+| `/health`                | GET    | Server health + scenarios loaded         |
+| `/changes`               | GET    | All change events with current severity  |
+| `/metrics/{scenario_id}` | GET    | Live behavioral metrics for a scenario   |
+| `/trigger/{scenario_id}` | POST   | Start monitoring a scenario              |
+| `/investigate`           | POST   | Run AI investigation on an active signal |
+| `/reset/{scenario_id}`   | POST   | Reset a scenario to idle                 |
+| `/config`                | GET    | Current wake.config.json values          |
 
 ---
 
