@@ -24,11 +24,11 @@ pip install fastapi uvicorn httpx python-dotenv pydantic
 Create the `.env` file:
 ```bash
 echo "ANTHROPIC_API_KEY=sk-ant-YOUR_KEY_HERE" > .env
-echo "TIME_MULTIPLIER=16" >> .env
+echo "WAKE_TIME_MULTIPLIER=16" >> .env
 ```
 
-> `TIME_MULTIPLIER=16` = 30-second demo signals
-> `TIME_MULTIPLIER=1`  = realistic 8-minute signals
+> `WAKE_TIME_MULTIPLIER=16` = 30-second demo signals
+> `WAKE_TIME_MULTIPLIER=1`  = realistic 8-minute signals
 
 Start the backend:
 ```bash
