@@ -37,6 +37,7 @@ uvicorn main:app --port 8000 --reload
 
 Backend runs at: http://localhost:8000
 Health check: http://localhost:8000/health
+swagger: http://127.0.0.1:8000/docs
 
 ---
 
