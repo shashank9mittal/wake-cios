@@ -48,4 +48,5 @@ export interface InvestigateResponse {
   recommendation: string
   severity: string
   summary_bullets: string[]
+  affected_users_count: number
 }

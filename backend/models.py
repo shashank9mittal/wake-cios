@@ -63,3 +63,4 @@ class InvestigateResponse(BaseModel):
     recommendation: str
     severity: Literal["none", "watch", "warning", "critical"]
     summary_bullets: list[str] = []
+    affected_users_count: int = 0

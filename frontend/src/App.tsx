@@ -422,6 +422,16 @@ function App() {
                 <div className="inv-header">
                   <div className="inv-revenue" style={{ color: revenueColor }}>
                     {revenueDisplay}
+                    {investigation.affected_users_count > 0 && (
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#dc2626',
+                        fontWeight: 500,
+                        marginTop: '6px'
+                      }}>
+                        ~{investigation.affected_users_count.toLocaleString()} {selectedChange.affected_segment} users affected this hour
+                      </div>
+                    )}
                   </div>
                   <div className={`inv-severity-badge ${investigation.severity}`}>
                     {investigation.severity.toUpperCase()}

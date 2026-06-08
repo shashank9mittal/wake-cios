@@ -156,6 +156,16 @@ async def investigate(body: InvestigateRequest):
             result.get("severity", "none"), "none"
         )
 
+    SEGMENT_PCT = {
+        "Mobile iOS": 0.31,
+        "All users": 1.0,
+        "None": 0.0,
+    }
+    pct = SEGMENT_PCT.get(scenario.get("affected_segment", "None"), 0.0)
+    result["affected_users_count"] = int(
+        CONFIG["sessions_per_minute"] * 60 * pct
+    )
+
     from services.claude import generate_summary_bullets
 
     if isinstance(result, dict) and result.get("signal_detected"):
