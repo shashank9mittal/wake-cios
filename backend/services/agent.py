@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 import httpx
 from dotenv import load_dotenv
 from pathlib import Path
@@ -204,21 +205,29 @@ async def run_investigation(scenario: dict, stats: dict) -> dict:
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             for _ in range(max_iterations):
-                response = await client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": os.getenv("ANTHROPIC_API_KEY", ""),
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
-                    },
-                    json={
-                        "model": "claude-sonnet-4-5",
-                        "max_tokens": 2048,
-                        "system": SYSTEM_PROMPT,
-                        "tools": TOOLS,
-                        "messages": messages,
-                    },
-                )
+                headers = {
+                    "x-api-key": os.getenv("ANTHROPIC_API_KEY", ""),
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                }
+                payload = {
+                    "model": "claude-sonnet-4-5",
+                    "max_tokens": 2048,
+                    "system": SYSTEM_PROMPT,
+                    "tools": TOOLS,
+                    "messages": messages,
+                }
+                for attempt in range(3):
+                    response = await client.post(
+                        "https://api.anthropic.com/v1/messages",
+                        headers=headers,
+                        json=payload,
+                    )
+                    if response.status_code != 529:
+                        break
+                    if attempt < 2:
+                        await asyncio.sleep(2 ** attempt)  # 1s, 2s backoff
+
                 response.raise_for_status()
                 body = response.json()
 
