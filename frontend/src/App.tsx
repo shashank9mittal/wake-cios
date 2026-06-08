@@ -230,6 +230,18 @@ function App() {
                   <div className="change-item-left">
                     <div className="change-name">{change.name}</div>
                     <div className="change-meta">{change.service}</div>
+                    {change.deployed_at && (
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        marginTop: '3px',
+                        color: signalLocked[change.id] ? '#dc2626' : '#16a34a'
+                      }}>
+                        {signalLocked[change.id]
+                          ? '⚠ Behavioral regression detected'
+                          : '✓ Within normal variance'}
+                      </div>
+                    )}
                   </div>
                   <div className="change-item-right">
                     <span className={`severity-dot ${change.severity}`}></span>

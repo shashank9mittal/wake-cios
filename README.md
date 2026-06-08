@@ -124,22 +124,91 @@ The simulator is a stand-in for the event pipelines that already exist at Walmar
 
 ## Quickstart
 
-Prereqs: Python 3.11+, Node 18+, an Anthropic API key.
+**Prerequisites:** Python 3.11+, Node 18+, an Anthropic API key.
+
+### 1. Clone
 
 ```bash
-git clone https://github.com/shashank9mittal/wake-cios && cd wake-cios
-echo "ANTHROPIC_API_KEY=sk-..." > backend/.env        # add TIME_MULTIPLIER=16 for 30-sec demo signals
-cd backend && pip install -r requirements.txt && uvicorn main:app --port 8000 &
-cd ../frontend && npm install && npm run dev           # dashboard at http://localhost:5173
+git clone https://github.com/shashank9mittal/wake-cios
+cd wake-cios
 ```
 
-Then trigger a scenario:
+### 2. Configure
+
+Create `backend/.env`:
 
 ```bash
-curl -X POST localhost:8000/trigger -d '{"scenario": "001"}' -H "Content-Type: application/json"
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional — speeds up demo signals.
+# 16 = signal fires in ~30 seconds instead of ~8 minutes.
+# Remove or set to 1 for realistic timing.
+WAKE_TIME_MULTIPLIER=16
 ```
 
-Watch the dashboard. The checkout regression signals in ~30 seconds (with `TIME_MULTIPLIER=16`; ~8 minutes at real-time speed). Hit **Investigate** when the signal fires.
+Edit `backend/data/wake.config.json` to point Wake at your service:
+
+```json
+{
+  "team": "Checkout Experience",
+  "service": "checkout-api",
+  "monitored_metrics": [
+    "checkout_initiation_rate",
+    "cart_abandonment_rate",
+    "session_duration_s",
+    "payment_completion_rate"
+  ],
+  "alert_sensitivity": "standard",
+  "revenue_per_session": 47,
+  "sessions_per_minute": 26000
+}
+```
+
+`revenue_per_session` and `sessions_per_minute` drive the revenue impact calculation in the investigation card. Change them and restart — no code edits needed.
+
+### 3. Start the backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --port 8000 --reload
+```
+
+Backend runs at **http://localhost:8000**. Verify with:
+
+```bash
+curl http://localhost:8000/health
+# → {"status":"ok","scenarios_loaded":7}
+```
+
+### 4. Start the frontend
+
+In a separate terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Dashboard runs at **http://localhost:5173**.
+
+### 5. Run a demo
+
+Select a scenario from the sidebar and click **Simulate Deploy**, or trigger one directly:
+
+```bash
+# Trigger the checkout regression (scenario 001)
+curl -X POST http://localhost:8000/trigger/deploy-001
+
+# Trigger the prompt regression (scenario 005 — shows in Prompt Pulse tab)
+curl -X POST http://localhost:8000/trigger/deploy-005
+
+# Reset a scenario so it can be re-triggered
+curl -X POST http://localhost:8000/reset/deploy-001
+```
+
+With `WAKE_TIME_MULTIPLIER=16`, the regression signals in ~30 seconds. Hit **Investigate** when the signal bar turns red.
 
 ### API
 
