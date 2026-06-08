@@ -176,6 +176,10 @@ function App() {
                   color: '#8e8e93',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '140px',
                 }}>
                   {config.team}
                 </div>
