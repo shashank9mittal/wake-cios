@@ -3,6 +3,7 @@ import { api } from "./services/api";
 import MetricChart from './components/MetricChart'
 import ShimmerLoader from './components/ShimmerLoader'
 import PromptPulse from './components/PromptPulse'
+import ReplayEngine, { type ReplaySnapshot } from './components/ReplayEngine'
 import type {
   DeployEvent,
   MetricsResponse,
@@ -31,6 +32,10 @@ function App() {
   const [activeTab, setActiveTab] = useState<'all' | 'prompt'>('all');
   const [investigateError, setInvestigateError] = useState<Record<string, string>>({});
   const [detectionMinutes, setDetectionMinutes] = useState<Record<string, number>>({});
+  const [detectionSnapshot, setDetectionSnapshot] = useState<
+    Record<string, ReplaySnapshot>
+  >({})
+  const [replayOpen, setReplayOpen] = useState(false)
 
   const pollingRef = useRef<Record<string, ReturnType<typeof setInterval>>>({})
 
@@ -70,6 +75,19 @@ function App() {
         setSignalLocked(prev => {
           if (!prev[selected!]) {
             setDetectionMinutes(dm => ({ ...dm, [selected!]: Math.round(data.minutes_elapsed) }));
+            setDetectionSnapshot(prev => {
+              if (prev[selected!]) return prev  // already captured at detection — don't overwrite
+              return {
+                ...prev,
+                [selected!]: {
+                  datapoints: data.datapoints,
+                  minutes: Math.round(data.minutes_elapsed),
+                  z_score: data.z_score,
+                  primary_metric: data.primary_metric,
+                  baseline: data.primary_metric_baseline,
+                }
+              }
+            });
           }
           return { ...prev, [selected!]: true };
         });
@@ -135,6 +153,8 @@ function App() {
       });
       setInvestigateError(prev => { const n = {...prev}; delete n[id]; return n; });
       setDetectionMinutes(prev => { const n = {...prev}; delete n[id]; return n; });
+      setDetectionSnapshot(prev => { const n = {...prev}; delete n[id]; return n });
+      setReplayOpen(false);
     }
   };
 
@@ -473,6 +493,22 @@ function App() {
                     .toLocaleString('en-US', { maximumFractionDigits: 0 })}/hr`
               return (
               <div className={`investigation-card ${investigation.severity}`}>
+                {detectionSnapshot[selected!] && investigation.signal_detected && (
+                  <button
+                    onClick={() => setReplayOpen(true)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      background: '#053288', color: '#fff',
+                      border: 'none', borderRadius: 8,
+                      padding: '8px 16px', fontSize: 12,
+                      fontFamily: "'SF Mono', monospace",
+                      fontWeight: 600, cursor: 'pointer',
+                      letterSpacing: '0.5px', marginBottom: 12,
+                    }}
+                  >
+                    ▶ REPLAY DETECTION
+                  </button>
+                )}
                 <div className="inv-header">
                   <div className="inv-revenue" style={{ color: revenueColor }}>
                     {revenueDisplay}
@@ -521,6 +557,14 @@ function App() {
           </div>
         )}
       </div>
+    {replayOpen && detectionSnapshot[selected!] && selectedChange && investigation && (
+      <ReplayEngine
+        snapshot={detectionSnapshot[selected!]}
+        scenario={selectedChange}
+        investigation={investigation}
+        onClose={() => setReplayOpen(false)}
+      />
+    )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ interface Props {
 export default function MetricChart({
   datapoints, baseline, primaryMetric, minutesElapsed, severity
 }: Props) {
+  baseline = baseline ?? 0.342
   const isSessionDuration = primaryMetric === 'session_duration_s'
 
   const prePoints = useMemo(() => {
