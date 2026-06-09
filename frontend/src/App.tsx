@@ -4,6 +4,7 @@ import MetricChart from './components/MetricChart'
 import ShimmerLoader from './components/ShimmerLoader'
 import PromptPulse from './components/PromptPulse'
 import ReplayEngine, { type ReplaySnapshot } from './components/ReplayEngine'
+import DemoPage from './pages/DemoPage'
 import type {
   DeployEvent,
   MetricsResponse,
@@ -19,6 +20,9 @@ const BADGE_ICONS: Record<string, string> = {
 };
 
 function App() {
+  const [view, setView] = useState<'main' | 'demo'>(
+    window.location.pathname === '/demo' ? 'demo' : 'main'
+  );
   const [changes, setChanges] = useState<DeployEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
@@ -194,6 +198,32 @@ function App() {
     return 'transparent'
   };
 
+  if (view === 'demo') {
+    return (
+      <div className="app">
+        <div className="sidebar">
+          <div className="sidebar-header">
+            <div className="logo">
+              <div className="logo-mark">W</div>
+              <span>Wake</span>
+            </div>
+          </div>
+          <div style={{ padding: '12px' }}>
+            <button
+              onClick={() => setView('main')}
+              style={{ width: '100%', padding: '8px', background: '#0071CE', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+            >
+              ← Back to Wake
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <DemoPage />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
@@ -234,6 +264,13 @@ function App() {
               onClick={() => setActiveTab('prompt')}
             >
               ◈ Prompt Pulse
+            </button>
+            <button
+              className="sidebar-tab"
+              onClick={() => setView('demo')}
+              style={{ color: '#0071CE', fontWeight: 600 }}
+            >
+              ▶ Demo
             </button>
           </div>
 

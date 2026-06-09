@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / ".env")
 from services.stats import compute_stats
+from services.ghe import fetch_latest_merged_pr
 from models import (
     TriggerResponse,
     MetricsResponse,
@@ -39,6 +40,11 @@ DATA_PATH = Path(__file__).parent / "data" / "scenarios.json"
 raw = json.loads(DATA_PATH.read_text())
 SCENARIOS: dict[str, dict] = {s["id"]: s for s in raw}
 TRIGGERED: dict[str, datetime | None] = {sid: None for sid in SCENARIOS}
+
+# GHE live deploy tracking
+GHE_CHANGES: list[dict] = []
+LAST_SEEN_PR: int | None = None
+DEMO_STATE = {"prompt_version": "concise"}
 
 # Speed multiplier for demos. Default 1.0 = real time (signal ~8 min).
 # Set WAKE_TIME_MULTIPLIER=16 in .env for a 30-second demo signal.
@@ -101,7 +107,55 @@ async def get_changes():
                 severity=severity,
             )
         )
+    # Append live GHE changes to the sidebar list
+    for ghe in GHE_CHANGES:
+        triggered_at = TRIGGERED.get(ghe["id"])
+        ghe_event = dict(ghe)
+        ghe_event["status"] = "triggered" if triggered_at else "idle"
+        events.append(ghe_event)
+
     return events
+
+
+@app.get("/latest-deploy")
+async def get_latest_deploy():
+    global LAST_SEEN_PR, DEMO_STATE
+    try:
+        pr = await fetch_latest_merged_pr()
+        if not pr:
+            return {"status": "no_pr_found"}
+
+        # New PR detected
+        if pr["pr_number"] != LAST_SEEN_PR:
+            LAST_SEEN_PR = pr["pr_number"]
+
+            # Add to GHE_CHANGES list (appears in sidebar)
+            existing_ids = [c["id"] for c in GHE_CHANGES]
+            if pr["id"] not in existing_ids:
+                GHE_CHANGES.append(pr)
+
+            # Auto-trigger based on change type
+            if pr["change_type"] == "prompt":
+                DEMO_STATE["prompt_version"] = "conversational"
+                # Auto-trigger scenario 005
+                if "deploy-005" not in TRIGGERED or TRIGGERED["deploy-005"] is None:
+                    TRIGGERED["deploy-005"] = datetime.now(timezone.utc)
+
+            elif pr["change_type"] == "config":
+                DEMO_STATE["prompt_version"] = "concise"
+
+            return {"status": "new_deploy_detected", "pr": pr,
+                    "auto_triggered": pr["change_type"] == "prompt"}
+
+        return {"status": "no_new_deploy", "pr": pr}
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/demo-state")
+def get_demo_state():
+    return DEMO_STATE
 
 
 @app.get("/metrics/{change_id}", response_model=MetricsResponse)
