@@ -6,9 +6,7 @@ from pathlib import Path
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-# Swap these two lines when moving to Walmart laptop:
-GHE_BASE = "https://api.github.com"           # personal GitHub (testing)
-# GHE_BASE = "https://gecgithub01.walmart.com/api/v3"  # Walmart GHE (production)
+GHE_BASE = os.getenv("GHE_BASE_URL", "https://api.github.com")
 
 TOKEN = os.getenv("GITHUB_TOKEN") or os.getenv("GHE_TOKEN", "")
 ORG   = "shashank9mittal"   # swap to Walmart org on Walmart laptop
