@@ -22,7 +22,7 @@ export default function Tooltip({ text, children, position = 'top' }: TooltipPro
           ...(position === 'bottom' && { top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)' }),
           ...(position === 'left' && { right: 'calc(100% + 6px)', top: '50%', transform: 'translateY(-50%)' }),
           ...(position === 'right' && { left: 'calc(100% + 6px)', top: '50%', transform: 'translateY(-50%)' }),
-          background: '#1d1d1f',
+          background: '#0071CE',
           color: '#fff',
           fontSize: 11,
           fontWeight: 500,

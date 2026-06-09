@@ -332,7 +332,7 @@ function App() {
                 c.service.toLowerCase().includes(search.toLowerCase()) ||
                 c.engineer.toLowerCase().includes(search.toLowerCase())
               ).map((change) => (
-                <Tooltip key={change.id} text={`${change.change_type.toUpperCase()} · ${change.service} · ${change.engineer}`} position="right">
+                <Tooltip key={change.id} text={`${change.change_type.toUpperCase()} · ${change.service} · ${change.engineer}`} position="top">
                 <div
                   className={`change-item ${selected === change.id ? "active" : ""} severity-${change.severity}`}
                   onClick={() => setSelected(change.id)}
