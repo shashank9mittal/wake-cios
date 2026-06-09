@@ -4,6 +4,7 @@ import MetricChart from './components/MetricChart'
 import ShimmerLoader from './components/ShimmerLoader'
 import PromptPulse from './components/PromptPulse'
 import ReplayEngine, { type ReplaySnapshot } from './components/ReplayEngine'
+import DemoPage from './pages/DemoPage'
 import type {
   DeployEvent,
   MetricsResponse,
@@ -19,6 +20,9 @@ const BADGE_ICONS: Record<string, string> = {
 };
 
 function App() {
+  const [view, setView] = useState<'main' | 'demo'>(
+    window.location.pathname === '/demo' ? 'demo' : 'main'
+  );
   const [changes, setChanges] = useState<DeployEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
@@ -59,6 +63,7 @@ function App() {
   // Poll metrics for selected change every 5 seconds
   useEffect(() => {
     if (!selected) return;
+    if (selected.startsWith('ghe-')) return;
     if (!selectedChange || !selectedChange.deployed_at) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMetrics(null);
@@ -194,6 +199,32 @@ function App() {
     return 'transparent'
   };
 
+  if (view === 'demo') {
+    return (
+      <div className="app">
+        <div className="sidebar">
+          <div className="sidebar-header">
+            <div className="logo">
+              <div className="logo-mark">W</div>
+              <span>Wake</span>
+            </div>
+          </div>
+          <div style={{ padding: '12px' }}>
+            <button
+              onClick={() => setView('main')}
+              style={{ width: '100%', padding: '8px', background: '#0071CE', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+            >
+              ← Back to Wake
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <DemoPage />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
@@ -235,6 +266,13 @@ function App() {
             >
               ◈ Prompt Pulse
             </button>
+            <button
+              className="sidebar-tab"
+              onClick={() => setView('demo')}
+              style={{ color: '#0071CE', fontWeight: 600 }}
+            >
+              ▶ Demo
+            </button>
           </div>
 
           {activeTab === 'all' ? (
@@ -244,7 +282,13 @@ function App() {
                 <div
                   key={change.id}
                   className={`change-item ${selected === change.id ? 'active' : ''} severity-${change.severity}`}
-                  onClick={() => setSelected(change.id)}
+                  onClick={() => {
+                    if (change.id.startsWith('ghe-') && change.change_type === 'prompt') {
+                      setSelected('deploy-005');
+                    } else {
+                      setSelected(change.id);
+                    }
+                  }}
                   style={{ borderLeft: `3px solid ${getItemBorderColor(change)}`, paddingLeft: '12px' }}
                 >
                   <div className="change-item-left">
@@ -338,11 +382,28 @@ function App() {
               <p>{selectedChange.change_artifact}</p>
             </div>
 
-            {selectedChange.deployed_at && !metrics && (
+            {selectedChange.deployed_at && !metrics && !selectedChange.id.startsWith('ghe-') && (
               <ShimmerLoader />
             )}
 
-            {metrics && (
+            {selectedChange.id.startsWith('ghe-') && (
+              <div style={{ margin: '24px', padding: '20px', background: '#f5f5f7', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1c1c1e', marginBottom: '8px' }}>
+                  PR #{selectedChange.pr_number ?? ''} merged into main
+                </div>
+                <div style={{ fontSize: '13px', color: '#555', marginBottom: '16px' }}>
+                  Wake is monitoring via scenario: Product Recommendation Prompt Tone Shift
+                </div>
+                <button
+                  onClick={() => setSelected('deploy-005')}
+                  style={{ background: '#0071CE', color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  View drift analysis →
+                </button>
+              </div>
+            )}
+
+            {metrics && metrics.all_metrics && !selectedChange.id.startsWith('ghe-') && (
               <>
                 <div className="metrics-grid">
                   {Object.entries(metrics.all_metrics).map(([key, m]) => {

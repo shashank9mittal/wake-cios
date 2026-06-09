@@ -6,8 +6,8 @@ Format: List each product with a short label of 5 words or fewer.
 Tone: Concise, factual, direct.
 
 Example output:
-- Nike Air Max 270 — Lightweight daily running shoe
+- Nike Air Max 270 — Lightweight daily running shoes
 - Sony WH-1000XM5 — Premium noise-canceling headphones
 - Apple Watch SE — Affordable smart fitness tracker
-- Hydro Flask 32oz — Insulated water bottle, all day
+- Hydro Flask 32oz — Insulated water bottle, all day 
 
