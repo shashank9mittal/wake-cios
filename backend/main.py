@@ -187,6 +187,7 @@ async def get_changes():
                 severity=severity,
             )
         )
+    events.sort(key=lambda e: (0 if e.id.startswith('ghe-') else 1))
     return events
 
 
