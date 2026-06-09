@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -21,7 +23,15 @@ from models import (
 # App setup
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="Wake — Customer Impact Observability")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await initialize_last_seen_pr()  # pre-seed, no trigger
+    task = asyncio.create_task(poll_ghe_background())
+    yield
+    task.cancel()
+
+
+app = FastAPI(title="Wake — Customer Impact Observability", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,7 +52,6 @@ SCENARIOS: dict[str, dict] = {s["id"]: s for s in raw}
 TRIGGERED: dict[str, datetime | None] = {sid: None for sid in SCENARIOS}
 
 # GHE live deploy tracking
-GHE_CHANGES: list[dict] = []
 LAST_SEEN_PR: int | None = None
 DEMO_STATE = {"prompt_version": "concise"}
 
@@ -50,6 +59,64 @@ DEMO_STATE = {"prompt_version": "concise"}
 # Set WAKE_TIME_MULTIPLIER=16 in .env for a 30-second demo signal.
 # Set WAKE_TIME_MULTIPLIER=1 to restore realistic timing before production.
 TIME_MULTIPLIER = float(os.getenv("WAKE_TIME_MULTIPLIER", "1.0"))
+
+# ---------------------------------------------------------------------------
+# GHE polling helpers (defined after SCENARIOS/TRIGGERED are initialized)
+# ---------------------------------------------------------------------------
+
+async def check_latest_pr() -> dict:
+    """Core GHE poll logic shared by the background task and /latest-deploy endpoint."""
+    global LAST_SEEN_PR, DEMO_STATE
+    pr = await fetch_latest_merged_pr()
+    if not pr:
+        return {"status": "no_pr_found"}
+
+    if pr["pr_number"] != LAST_SEEN_PR:
+        LAST_SEEN_PR = pr["pr_number"]
+
+        # Idempotency: skip if already processed (e.g. after backend restart)
+        if pr["id"] in SCENARIOS:
+            return {"status": "already_processed", "pr": pr}
+
+        if pr["change_type"] == "prompt":
+            DEMO_STATE["prompt_version"] = "conversational"
+            new_scenario = dict(SCENARIOS["deploy-005"])
+            new_scenario["id"] = pr["id"]
+            new_scenario["name"] = f"PR #{pr['pr_number']}: {pr['name']}"
+            new_scenario["engineer"] = pr["engineer"]
+            new_scenario["service"] = pr["service"]
+            new_scenario["change_artifact"] = f"PR #{pr['pr_number']} merged into {pr.get('base_branch', 'main')}"
+            SCENARIOS[pr["id"]] = new_scenario
+            TRIGGERED[pr["id"]] = datetime.now(timezone.utc)
+
+        elif pr["change_type"] == "config":
+            DEMO_STATE["prompt_version"] = "concise"
+
+        return {"status": "new_deploy_detected", "pr": pr,
+                "auto_triggered": pr["change_type"] == "prompt"}
+
+    return {"status": "no_new_deploy", "pr": pr}
+
+
+async def initialize_last_seen_pr():
+    """On startup, silently fetch the latest PR so we don't re-trigger it on first poll."""
+    try:
+        pr = await fetch_latest_merged_pr()
+        if pr:
+            global LAST_SEEN_PR
+            LAST_SEEN_PR = pr["pr_number"]
+            print(f"Startup: LAST_SEEN_PR initialized to {LAST_SEEN_PR}")
+    except Exception as e:
+        print(f"Startup PR init error: {e}")
+
+
+async def poll_ghe_background():
+    while True:
+        await asyncio.sleep(10)
+        try:
+            await check_latest_pr()
+        except Exception as e:
+            print(f"GHE poll error: {e}")
 
 # ---------------------------------------------------------------------------
 # Endpoints
@@ -107,48 +174,13 @@ async def get_changes():
                 severity=severity,
             )
         )
-    # Append live GHE changes to the sidebar list
-    for ghe in GHE_CHANGES:
-        triggered_at = TRIGGERED.get(ghe["id"])
-        ghe_event = dict(ghe)
-        ghe_event["status"] = "triggered" if triggered_at else "idle"
-        events.append(ghe_event)
-
     return events
 
 
 @app.get("/latest-deploy")
 async def get_latest_deploy():
-    global LAST_SEEN_PR, DEMO_STATE
     try:
-        pr = await fetch_latest_merged_pr()
-        if not pr:
-            return {"status": "no_pr_found"}
-
-        # New PR detected
-        if pr["pr_number"] != LAST_SEEN_PR:
-            LAST_SEEN_PR = pr["pr_number"]
-
-            # Add to GHE_CHANGES list (appears in sidebar)
-            existing_ids = [c["id"] for c in GHE_CHANGES]
-            if pr["id"] not in existing_ids:
-                GHE_CHANGES.append(pr)
-
-            # Auto-trigger based on change type
-            if pr["change_type"] == "prompt":
-                DEMO_STATE["prompt_version"] = "conversational"
-                # Auto-trigger scenario 005
-                if "deploy-005" not in TRIGGERED or TRIGGERED["deploy-005"] is None:
-                    TRIGGERED["deploy-005"] = datetime.now(timezone.utc)
-
-            elif pr["change_type"] == "config":
-                DEMO_STATE["prompt_version"] = "concise"
-
-            return {"status": "new_deploy_detected", "pr": pr,
-                    "auto_triggered": pr["change_type"] == "prompt"}
-
-        return {"status": "no_new_deploy", "pr": pr}
-
+        return await check_latest_pr()
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -235,7 +267,6 @@ async def investigate(body: InvestigateRequest):
     }
     pct = SEGMENT_PCT.get(scenario.get("affected_segment", "None"), 0.0)
     result["affected_users_count"] = int(CONFIG["sessions_per_minute"] * 60 * pct)
-
 
     return result
 
