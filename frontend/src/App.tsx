@@ -5,6 +5,7 @@ import ShimmerLoader from "./components/ShimmerLoader";
 import PromptPulse from "./components/PromptPulse";
 import ReplayEngine, { type ReplaySnapshot } from "./components/ReplayEngine";
 import DemoPage from "./pages/DemoPage";
+import SidebarSearch from "./components/SidebarSearch";
 import type {
   DeployEvent,
   MetricsResponse,
@@ -44,6 +45,7 @@ function App() {
     Record<string, ReplaySnapshot>
   >({});
   const [replayOpen, setReplayOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   const pollingRef = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
@@ -320,7 +322,13 @@ function App() {
           {activeTab === "all" ? (
             <>
               <div className="sidebar-section-label">Recent changes</div>
-              {changes.map((change) => (
+              <SidebarSearch value={search} onChange={setSearch} />
+              {changes.filter(c =>
+                search === '' ||
+                c.name.toLowerCase().includes(search.toLowerCase()) ||
+                c.service.toLowerCase().includes(search.toLowerCase()) ||
+                c.engineer.toLowerCase().includes(search.toLowerCase())
+              ).map((change) => (
                 <div
                   key={change.id}
                   className={`change-item ${selected === change.id ? "active" : ""} severity-${change.severity}`}

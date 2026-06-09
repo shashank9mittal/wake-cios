@@ -12,16 +12,16 @@
     "deployed_at": null,
     "outcome": "regression",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
-      "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "checkout_initiation_rate": 0.338,
+      "cart_abandonment_rate": 0.624,
+      "session_duration_s": 183,
+      "payment_completion_rate": 0.706
     },
     "baseline_stddev": {
-      "checkout_initiation_rate": 0.008,
-      "cart_abandonment_rate": 0.012,
-      "session_duration_s": 8.0,
-      "payment_completion_rate": 0.009
+      "checkout_initiation_rate": 0.009,
+      "cart_abandonment_rate": 0.013,
+      "session_duration_s": 9.2,
+      "payment_completion_rate": 0.010
     },
     "shift": {
       "checkout_initiation_rate": -0.031,
@@ -45,16 +45,16 @@
     "deployed_at": null,
     "outcome": "clean",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
-      "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "checkout_initiation_rate": 0.351,
+      "cart_abandonment_rate": 0.609,
+      "session_duration_s": 194,
+      "payment_completion_rate": 0.718
     },
     "baseline_stddev": {
-      "checkout_initiation_rate": 0.008,
-      "cart_abandonment_rate": 0.012,
-      "session_duration_s": 8.0,
-      "payment_completion_rate": 0.009
+      "checkout_initiation_rate": 0.007,
+      "cart_abandonment_rate": 0.011,
+      "session_duration_s": 7.1,
+      "payment_completion_rate": 0.008
     },
     "shift": {
       "checkout_initiation_rate": 0.002,
@@ -78,16 +78,16 @@
     "deployed_at": null,
     "outcome": "positive",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
-      "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "checkout_initiation_rate": 0.344,
+      "cart_abandonment_rate": 0.621,
+      "session_duration_s": 201,
+      "payment_completion_rate": 0.697
     },
     "baseline_stddev": {
-      "checkout_initiation_rate": 0.008,
-      "cart_abandonment_rate": 0.012,
-      "session_duration_s": 8.0,
-      "payment_completion_rate": 0.009
+      "checkout_initiation_rate": 0.010,
+      "cart_abandonment_rate": 0.014,
+      "session_duration_s": 11.4,
+      "payment_completion_rate": 0.011
     },
     "shift": {
       "checkout_initiation_rate": 0.024,
@@ -111,15 +111,15 @@
     "deployed_at": null,
     "outcome": "regression",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
-      "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "checkout_initiation_rate": 0.335,
+      "cart_abandonment_rate": 0.631,
+      "session_duration_s": 178,
+      "payment_completion_rate": 0.702
     },
     "baseline_stddev": {
       "checkout_initiation_rate": 0.008,
-      "cart_abandonment_rate": 0.012,
-      "session_duration_s": 8.0,
+      "cart_abandonment_rate": 0.015,
+      "session_duration_s": 8.8,
       "payment_completion_rate": 0.009
     },
     "shift": {
@@ -144,10 +144,10 @@
     "deployed_at": null,
     "outcome": "regression",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
+      "checkout_initiation_rate": 0.343,
       "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "session_duration_s": 186,
+      "payment_completion_rate": 0.708
     },
     "baseline_stddev": {
       "checkout_initiation_rate": 0.008,
@@ -177,16 +177,16 @@
     "deployed_at": null,
     "outcome": "clean",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
-      "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "checkout_initiation_rate": 0.329,
+      "cart_abandonment_rate": 0.638,
+      "session_duration_s": 212,
+      "payment_completion_rate": 0.689
     },
     "baseline_stddev": {
-      "checkout_initiation_rate": 0.008,
-      "cart_abandonment_rate": 0.012,
-      "session_duration_s": 8.0,
-      "payment_completion_rate": 0.009
+      "checkout_initiation_rate": 0.011,
+      "cart_abandonment_rate": 0.016,
+      "session_duration_s": 13.2,
+      "payment_completion_rate": 0.012
     },
     "shift": {
       "checkout_initiation_rate": 0.001,
@@ -210,15 +210,15 @@
     "deployed_at": null,
     "outcome": "noise",
     "baseline": {
-      "checkout_initiation_rate": 0.342,
-      "cart_abandonment_rate": 0.618,
-      "session_duration_s": 187,
-      "payment_completion_rate": 0.710
+      "checkout_initiation_rate": 0.340,
+      "cart_abandonment_rate": 0.622,
+      "session_duration_s": 185,
+      "payment_completion_rate": 0.711
     },
     "baseline_stddev": {
       "checkout_initiation_rate": 0.008,
       "cart_abandonment_rate": 0.012,
-      "session_duration_s": 8.0,
+      "session_duration_s": 8.5,
       "payment_completion_rate": 0.009
     },
     "shift": {

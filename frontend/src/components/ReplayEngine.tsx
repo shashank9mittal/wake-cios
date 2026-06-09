@@ -213,7 +213,11 @@ export default function ReplayEngine({ snapshot, scenario, investigation, onClos
             {investigation.summary_bullets?.slice(0, 2).map((b, i) => (
               <div key={i} style={S.bullet}>
                 <span style={S.bulletDot}>•</span>
-                <span dangerouslySetInnerHTML={{ __html: b.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                <span>
+                  {b.split(/\*\*(.*?)\*\*/).map((part, i) =>
+                    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+                  )}
+                </span>
               </div>
             ))}
           </div>
