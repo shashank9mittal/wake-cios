@@ -99,12 +99,25 @@ async def check_latest_pr() -> dict:
 
 
 async def initialize_last_seen_pr():
-    """On startup, silently fetch the latest PR so we don't re-trigger it on first poll."""
     try:
         pr = await fetch_latest_merged_pr()
         if pr:
             global LAST_SEEN_PR
             LAST_SEEN_PR = pr["pr_number"]
+            # Rebuild scenario in memory if it was previously processed
+            if pr["change_type"] == "prompt" and pr["id"] not in SCENARIOS:
+                new_scenario = dict(SCENARIOS["deploy-005"])
+                new_scenario["id"] = pr["id"]
+                new_scenario["name"] = f"PR #{pr['pr_number']}: {pr['name']}"
+                new_scenario["engineer"] = pr["engineer"]
+                new_scenario["service"] = pr["service"]
+                new_scenario["change_artifact"] = f"PR #{pr['pr_number']} merged into {pr.get('base_branch', 'main')}"
+                SCENARIOS[pr["id"]] = new_scenario
+                TRIGGERED[pr["id"]] = datetime.fromisoformat(
+                    pr["merged_at"].replace("Z", "+00:00")
+                )
+                DEMO_STATE["prompt_version"] = "conversational"
+                print(f"Startup: rebuilt scenario {pr['id']} from merged PR")
             print(f"Startup: LAST_SEEN_PR initialized to {LAST_SEEN_PR}")
     except Exception as e:
         print(f"Startup PR init error: {e}")
