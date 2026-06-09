@@ -6,6 +6,7 @@ import PromptPulse from "./components/PromptPulse";
 import ReplayEngine, { type ReplaySnapshot } from "./components/ReplayEngine";
 import DemoPage from "./pages/DemoPage";
 import SidebarSearch from "./components/SidebarSearch";
+import Tooltip from "./components/Tooltip";
 import type {
   DeployEvent,
   MetricsResponse,
@@ -311,12 +312,14 @@ function App() {
             >
               All changes
             </button>
-            <button
-              className={`sidebar-tab ${activeTab === "prompt" ? "active" : ""}`}
-              onClick={() => setActiveTab("prompt")}
-            >
-              ◈ Prompt Pulse
-            </button>
+            <Tooltip text="View AI prompt changes and their behavioral impact" position="bottom">
+              <button
+                className={`sidebar-tab ${activeTab === "prompt" ? "active" : ""}`}
+                onClick={() => setActiveTab("prompt")}
+              >
+                ◈ Prompt Pulse
+              </button>
+            </Tooltip>
           </div>
 
           {activeTab === "all" ? (
@@ -329,8 +332,8 @@ function App() {
                 c.service.toLowerCase().includes(search.toLowerCase()) ||
                 c.engineer.toLowerCase().includes(search.toLowerCase())
               ).map((change) => (
+                <Tooltip key={change.id} text={`${change.change_type.toUpperCase()} · ${change.service} · ${change.engineer}`} position="right">
                 <div
-                  key={change.id}
                   className={`change-item ${selected === change.id ? "active" : ""} severity-${change.severity}`}
                   onClick={() => setSelected(change.id)}
                   style={{
@@ -366,6 +369,7 @@ function App() {
                     </span>
                   </div>
                 </div>
+                </Tooltip>
               ))}
             </>
           ) : (
@@ -413,22 +417,26 @@ function App() {
               </div>
               <div className="header-actions">
                 {!selectedChange.deployed_at ? (
-                  <button
-                    className="btn-primary"
-                    onClick={() => handleTrigger(selectedChange.id)}
-                    disabled={triggering === selectedChange.id}
-                  >
-                    {triggering === selectedChange.id
-                      ? "Triggering..."
-                      : "Simulate Deploy"}
-                  </button>
+                  <Tooltip text="Start monitoring this deploy">
+                    <button
+                      className="btn-primary"
+                      onClick={() => handleTrigger(selectedChange.id)}
+                      disabled={triggering === selectedChange.id}
+                    >
+                      {triggering === selectedChange.id
+                        ? "Triggering..."
+                        : "Simulate Deploy"}
+                    </button>
+                  </Tooltip>
                 ) : (
-                  <button
-                    className="btn-ghost"
-                    onClick={() => handleReset(selectedChange.id)}
-                  >
-                    Reset
-                  </button>
+                  <Tooltip text="Clear monitoring data and reset scenario">
+                    <button
+                      className="btn-ghost"
+                      onClick={() => handleReset(selectedChange.id)}
+                    >
+                      Reset
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -531,12 +539,14 @@ function App() {
                         Investigating...
                       </span>
                     ) : (
-                      <button
-                        className="btn-primary"
-                        onClick={handleInvestigate}
-                      >
-                        Investigate →
-                      </button>
+                      <Tooltip text="Run Claude agent to diagnose the regression">
+                        <button
+                          className="btn-primary"
+                          onClick={handleInvestigate}
+                        >
+                          Investigate →
+                        </button>
+                      </Tooltip>
                     ))}
                 </div>
 
@@ -655,27 +665,29 @@ function App() {
                   >
                     {detectionSnapshot[selected!] &&
                       investigation.signal_detected && (
-                        <button
-                          onClick={() => setReplayOpen(true)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            background: "#053288",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 8,
-                            padding: "8px 16px",
-                            fontSize: 12,
-                            fontFamily: "'SF Mono', monospace",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            letterSpacing: "0.5px",
-                            marginBottom: 12,
-                          }}
-                        >
-                          ▶ REPLAY DETECTION
-                        </button>
+                        <Tooltip text="Replay the moment Wake detected the signal">
+                          <button
+                            onClick={() => setReplayOpen(true)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              background: "#053288",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 8,
+                              padding: "8px 16px",
+                              fontSize: 12,
+                              fontFamily: "'SF Mono', monospace",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              letterSpacing: "0.5px",
+                              marginBottom: 12,
+                            }}
+                          >
+                            ▶ REPLAY DETECTION
+                          </button>
+                        </Tooltip>
                       )}
                     <div className="inv-header">
                       <div
