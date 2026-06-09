@@ -116,15 +116,15 @@ When a prompt PR merges, this page flips from V1 to V2 in real time with a visib
 
 Wake ships with 7 scripted scenarios that exercise every path of the engine, plus the live GHE path above.
 
-| ID         | Scenario                                          | Type           | Outcome                          |
-| ---------- | ------------------------------------------------- | -------------- | -------------------------------- |
-| deploy-001 | Checkout Step 2 Payment UI Refactor               | Code deploy    | 🔴 Signals ~min 8 · ~$700K/hr    |
-| deploy-002 | Search Ranking Latency Optimization               | Code deploy    | 🟢 Never signals                 |
-| deploy-003 | Personalized Recommendations Collaborative Filter | Code deploy    | 🟢 Positive drift, no alert      |
-| deploy-004 | Cart Service Promo Code Validation Refactor       | Code deploy    | 🔴 Signals ~min 10               |
-| deploy-005 | Product Recommendation Prompt Tone Shift          | **Prompt**     | 🔴 Signals ~min 8 · Prompt Pulse |
-| deploy-006 | Homepage Hero Banner Feature Flag Rollout         | Config         | 🟢 Never signals                 |
-| deploy-007 | Checkout API Token Refresh Timing Fix — **decoy** | Code deploy    | ⚪ **Never alerts** — the point  |
+| ID         | Scenario                                          | Type        | Outcome                          |
+| ---------- | ------------------------------------------------- | ----------- | -------------------------------- |
+| deploy-001 | Checkout Step 2 Payment UI Refactor               | Code deploy | 🔴 Signals ~min 8 · ~$700K/hr    |
+| deploy-002 | Search Ranking Latency Optimization               | Code deploy | 🟢 Never signals                 |
+| deploy-003 | Personalized Recommendations Collaborative Filter | Code deploy | 🟢 Positive drift, no alert      |
+| deploy-004 | Cart Service Promo Code Validation Refactor       | Code deploy | 🔴 Signals ~min 10               |
+| deploy-005 | Product Recommendation Prompt Tone Shift          | **Prompt**  | 🔴 Signals ~min 8 · Prompt Pulse |
+| deploy-006 | Homepage Hero Banner Feature Flag Rollout         | Config      | 🟢 Never signals                 |
+| deploy-007 | Checkout API Token Refresh Timing Fix — **decoy** | Code deploy | ⚪ **Never alerts** — the point  |
 
 **Scenario 007 is the heart of the pitch.** Its checkout metric dips below baseline — exactly what a threshold alert would page on. Wake stays silent because, statistically, the movement is within normal variance. **No false alarms is a feature, not a gap.**
 
@@ -206,28 +206,28 @@ Edit `backend/data/wake.config.json` to point Wake at any service:
 
 ### Environment variables
 
-| Variable               | Required | Purpose                                                              |
-| ---------------------- | -------- | ------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`    | Yes      | Powers the ReAct investigation agent.                               |
-| `WAKE_TIME_MULTIPLIER` | No       | Demo speed. `16` = ~30s signals; `1` = realistic ~8-min signals.    |
-| `GITHUB_TOKEN`         | No       | Auth for the live GHE poller (falls back to `GHE_TOKEN`).           |
-| `GHE_BASE_URL`         | No       | GHE API base. Defaults to `https://api.github.com` for the demo.    |
+| Variable               | Required | Purpose                                                          |
+| ---------------------- | -------- | ---------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`    | Yes      | Powers the ReAct investigation agent.                            |
+| `WAKE_TIME_MULTIPLIER` | No       | Demo speed. `16` = ~30s signals; `1` = realistic ~8-min signals. |
+| `GITHUB_TOKEN`         | No       | Auth for the live GHE poller (falls back to `GHE_TOKEN`).        |
+| `GHE_BASE_URL`         | No       | GHE API base. Defaults to `https://api.github.com` for the demo. |
 
 ---
 
 ## API Reference
 
-| Endpoint                 | Method | What it does                                              |
-| ------------------------ | ------ | --------------------------------------------------------- |
-| `/health`                | GET    | Liveness check + count of scenarios loaded.               |
-| `/config`                | GET    | Current `wake.config.json` values.                        |
-| `/changes`               | GET    | All change events with live status & severity (GHE-first).|
-| `/metrics/{change_id}`   | GET    | Live z-score statistics for a triggered scenario.         |
-| `/latest-deploy`         | GET    | Force a GHE poll; report the most recent merged PR.       |
-| `/demo-state`            | GET    | Current storefront prompt version (drives `/demo`).       |
-| `/trigger/{scenario_id}` | POST   | Start monitoring a scenario.                              |
-| `/investigate`           | POST   | Run the AI investigation on an active signal.             |
-| `/reset/{scenario_id}`   | POST   | Reset a scenario to idle so it can be re-run.             |
+| Endpoint                 | Method | What it does                                               |
+| ------------------------ | ------ | ---------------------------------------------------------- |
+| `/health`                | GET    | Liveness check + count of scenarios loaded.                |
+| `/config`                | GET    | Current `wake.config.json` values.                         |
+| `/changes`               | GET    | All change events with live status & severity (GHE-first). |
+| `/metrics/{change_id}`   | GET    | Live z-score statistics for a triggered scenario.          |
+| `/latest-deploy`         | GET    | Force a GHE poll; report the most recent merged PR.        |
+| `/demo-state`            | GET    | Current storefront prompt version (drives `/demo`).        |
+| `/trigger/{scenario_id}` | POST   | Start monitoring a scenario.                               |
+| `/investigate`           | POST   | Run the AI investigation on an active signal.              |
+| `/reset/{scenario_id}`   | POST   | Reset a scenario to idle so it can be re-run.              |
 
 Interactive Swagger docs at `http://localhost:8000/docs`.
 
@@ -239,9 +239,6 @@ Interactive Swagger docs at `http://localhost:8000/docs`.
 - **Observation card** — the agent's 3-bullet VP summary, responsible PR, affected-user count, and revenue impact.
 - **Prompt Pulse** — a dedicated view for AI-prompt changes, surfacing prompt regressions distinctly from code/config.
 - **Detection Replay** — replay any detection timeline from the moment of deploy to the signal firing.
-- **Sidebar search & filter** — instantly filter the change list; GHE-sourced PRs are pinned to the top.
-- **Contextual tooltips & shimmer loaders** — Walmart-blue tooltips on key controls; skeleton states while metrics load.
-- **`/demo` storefront** — the customer-facing recommendation widget described above.
 
 ---
 
