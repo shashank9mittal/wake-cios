@@ -14,11 +14,13 @@ REPO  = "wake-cios"
 
 
 def _headers() -> dict:
-    return {
-        "Authorization": f"Bearer {TOKEN}",
+    headers = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
+    if TOKEN:
+        headers["Authorization"] = f"Bearer {TOKEN}"
+    return headers
 
 
 def _infer_change_type(files: list[str]) -> str:

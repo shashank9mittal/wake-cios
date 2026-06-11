@@ -84,7 +84,7 @@ This is what makes Wake real, not a slideshow. Wake runs a background poller aga
 - A **merged PR is detected automatically** — no manual trigger — and surfaces as a `ghe-pr-{number}` change event at the **top of the sidebar**.
 - Wake **classifies the change from the PR's file diff**: edits under `prompts/` → `prompt`, `*config.json` → `config`, everything else → `code` — and infers the affected surface the same way.
 - A merged **prompt** PR **auto-triggers monitoring** and flips the customer-facing storefront at [`/demo`](#the-customers-screen-demo) — so a real PR merge ripples all the way into customer behavior, live.
-- The integration is **idempotent and restart-safe**: a previously processed PR is rebuilt in memory on startup and never double-fires.
+- The integration is **idempotent and restart-safe**: on startup, Wake pre-seeds the most recent merged PR so an old merge never re-fires — and a restart is a clean slate (storefront back to V1, only scripted scenarios listed) until the next live merge.
 
 **The pitch in one move:** merge a prompt PR → Wake detects it → the storefront copy visibly changes → behavioral metrics drift → Wake signals the regression and names the PR responsible. End to end, on real infrastructure. *(The repo's own history contains the merged PRs used to test this path.)*
 
@@ -160,7 +160,7 @@ Seven scripted scenarios exercise every path of the engine, plus the live GHE pa
 
 | ID         | Scenario                                          | Type        | Outcome                          |
 | ---------- | ------------------------------------------------- | ----------- | -------------------------------- |
-| deploy-001 | Checkout Step 2 Payment UI Refactor               | Code deploy | 🔴 Signals min 10 · ~$700K/hr    |
+| deploy-001 | Checkout Step 2 Payment UI Refactor               | Code deploy | 🔴 Signals min 10 · ~$500K/hr    |
 | deploy-002 | Search Ranking Latency Optimization               | Code deploy | 🟢 Never signals                 |
 | deploy-003 | Personalized Recommendations Collaborative Filter | Code deploy | 🟢 Positive drift, no alert      |
 | deploy-004 | Cart Service Promo Code Validation Refactor       | Code deploy | 🔴 Signals min 10                |

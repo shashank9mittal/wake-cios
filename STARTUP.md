@@ -78,7 +78,7 @@ Open http://localhost:5173, click any scenario in the sidebar, and click
 
 Or trigger via curl:
 ```bash
-# Checkout regression — signals in ~30 seconds
+# Checkout regression — signals in ~37 seconds
 curl -X POST localhost:8000/trigger/deploy-001
 
 # Prompt regression — shows in the Prompt Pulse tab
@@ -125,8 +125,9 @@ curl localhost:8000/latest-deploy
 curl localhost:8000/demo-state
 ```
 
-The integration is idempotent: a PR that's already been processed is rebuilt in
-memory on restart and never double-fires.
+The integration is idempotent: Wake pre-seeds the most recent merged PR on startup so an
+old merge never re-fires. A restart is a clean slate — merge a fresh prompt PR to run the
+live demo again.
 
 ---
 
@@ -134,10 +135,10 @@ memory on restart and never double-fires.
 
 | ID         | Name                                  | Expected                            |
 | ---------- | ------------------------------------- | ----------------------------------- |
-| deploy-001 | Checkout regression                   | 🔴 Alert ~30s · ~$700K/hr           |
+| deploy-001 | Checkout regression                   | 🔴 Alert ~37s · ~$500K/hr           |
 | deploy-002 | Search clean                          | 🟢 Never alerts                     |
 | deploy-003 | Recommendations positive              | 🟢 Never alerts (positive drift)    |
-| deploy-004 | Cart abandonment regression           | 🔴 Alert ~40s                       |
+| deploy-004 | Cart abandonment regression           | 🔴 Alert ~37s                       |
 | deploy-005 | Prompt regression                     | 🔴 Alert ~30s · Prompt Pulse        |
 | deploy-006 | Homepage clean                        | 🟢 Never alerts                     |
 | deploy-007 | Checkout decoy                        | ⚪ Never alerts (noisy but healthy) |

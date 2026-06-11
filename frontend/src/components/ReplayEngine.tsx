@@ -229,7 +229,7 @@ export default function ReplayEngine({ snapshot, scenario, investigation, onClos
             <div style={{ ...S.splitEyebrow, color: '#053288' }}>WAKE</div>
             <div style={S.splitHeadline}>Detected in {snapshot.minutes} minutes</div>
             <div style={S.splitRevenue}>
-              –${signalFired ? investigation.revenue_impact_per_hour.toLocaleString() : '—'}/hr
+              –${signalFired ? revenue.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'}/hr
             </div>
             {investigation.affected_users_count > 0 && (
               <div style={S.splitSub}>

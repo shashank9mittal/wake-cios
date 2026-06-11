@@ -6,6 +6,9 @@ from config import CONFIG
 
 METRICS: list[str] = CONFIG["monitored_metrics"]
 
+# Metrics where an INCREASE is bad (mirror of the frontend's HIGHER_IS_WORSE)
+HIGHER_IS_WORSE = {"cart_abandonment_rate"}
+
 
 def _seed(scenario_id: str, *tags) -> int:
     """Deterministic cross-process seed — not affected by PYTHONHASHSEED."""
@@ -89,7 +92,14 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
     # ------------------------------------------------------------------ #
     # Step 4 — Severity
     # ------------------------------------------------------------------ #
-    if z_abs < 1.5:
+    # Direction-aware: only movement in the BAD direction for the primary
+    # metric is alert-worthy. Improvements never page anyone.
+    pm_is_higher_worse = pm in HIGHER_IS_WORSE
+    bad_direction = (z_score > 0) if pm_is_higher_worse else (z_score < 0)
+
+    if not bad_direction:
+        severity = "none"
+    elif z_abs < 1.5:
         severity = "none"
     elif z_abs < 2.0:
         severity = "watch"
@@ -98,17 +108,10 @@ def compute_stats(scenario: dict, minutes_elapsed: float) -> dict:
     else:
         severity = "critical"
 
-    # Severity reflects alert-worthiness, not raw |z|. Non-regression
-    # outcomes (clean / positive / noise) never alert, so never escalate
-    # severity for them — keeps chart color and sidebar consistent.
-    outcome = scenario.get("outcome", "clean")
-    if outcome != "regression":
-        severity = "none"
-
     # ------------------------------------------------------------------ #
     # Step 5 — Signal detection
     # ------------------------------------------------------------------ #
-    signal_detected = (outcome == "regression") and (z_abs >= 2.0)
+    signal_detected = bad_direction and (z_abs >= 2.0)
 
     # ------------------------------------------------------------------ #
     # Confidence (0-100) derived from |z|
