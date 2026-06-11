@@ -40,11 +40,11 @@ https://github.com/shashank9mittal/wake-cios/raw/main/docs/wake-demo.mp4
 
 **What you'll see, end to end, with zero manual steps:**
 
-1. A real PR editing an AI prompt is **merged on GitHub** — that's the only human action in the entire demo.
-2. Within **≤10 seconds**, Wake's poller detects the merge, classifies it as a _prompt_ change from the file diff, and auto-starts monitoring.
-3. The customer-facing storefront **visibly flips** from the concise V1 copy to the verbose V2 copy the prompt shipped — the literal thing a customer now sees.
-4. Behavioral metrics begin to drift. At sustained statistical significance, **Wake signals the regression** (~8 monitored minutes after deploy).
-5. One click on **Investigate**: the Claude agent correlates the signal to the merged PR, explains the likely mechanism, and prices the damage in **$/hour** — then **Detection Replay** re-runs the whole timeline from merge to alert.
+1. A real PR editing an AI prompt is **merged on GitHub** — the only manual step in the entire demo.
+2. Within **≤10 seconds**, Wake's poller detects the merge, classifies it as a *prompt* change from the file diff, and auto-starts monitoring — no webhook, no instrumentation.
+3. Behavioral metrics begin to drift. At sustained statistical significance, **Wake signals the regression** (~8 monitored minutes after deploy).
+4. One click on **Investigate**: the Claude agent correlates the signal to the merged PR, explains the likely mechanism, and prices the damage in **$/hour**.
+5. **Detection Replay** re-runs the timeline from merge to alert — caught in minutes vs. a 7-day review cycle.
 
 ---
 
