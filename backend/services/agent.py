@@ -23,11 +23,18 @@ A behavioral signal has been detected after a change shipped.
 Use the available tools to gather evidence, then produce a final diagnosis.
 
 Investigation process:
-1. Call get_change_artifact to understand what changed
-2. Call get_segment_breakdown to identify who is affected
-3. Call get_surface_map to understand blast radius
-4. Call get_similar_incidents to check for patterns
-5. After gathering evidence, produce your final diagnosis
+1. Call get_change_timeline to see ALL changes near the signal. Do not assume
+   the named change is responsible — identify the culprit by matching deploy
+   timing to drift onset AND surface to where the metric dropped.
+2. Call get_segment_breakdown to see which users are hit. A single-segment
+   (e.g. iOS-only) impact points to a client/layout cause; a broad impact
+   points to a backend cause.
+3. Call get_change_artifact for the suspected culprit and infer the mechanism
+   from the raw diff plus the segment pattern — do not expect it to be
+   explained to you.
+4. Call get_surface_map and get_similar_incidents to corroborate.
+5. State, in likely_causes and plain_english, WHY you ruled out the other
+   changes in the timeline and what evidence pins the one you chose.
 
 Return ONLY valid JSON matching this exact schema:
 {
@@ -77,6 +84,11 @@ SYSTEM_PROMPT = SYSTEM_PROMPT.replace(
 
 TOOLS = [
     {
+        "name": "get_change_timeline",
+        "description": "Get all changes deployed in the ~15 minutes around the behavioral signal, across all services, with deploy time offsets and affected surfaces. Use this to correlate WHICH change is responsible by timing and surface overlap.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
         "name": "get_change_artifact",
         "description": (
             "Retrieve the full change artifact — diff summary, "
@@ -123,12 +135,29 @@ TOOLS = [
 def handle_tool(tool_name: str, tool_input: dict, scenario: dict, stats: dict) -> str:
     """Return realistic synthetic data for each read-only investigation tool."""
 
+    if tool_name == "get_change_timeline":
+        culprit_surface = scenario["surface"]
+        culprit_service = scenario["service"]
+        return (
+            "Changes deployed in the last 15 minutes (signal drift began at T-3min):\n\n"
+            f"[T-12min] search-api · surface: search-results · code deploy\n"
+            f"          'Async result prefetch' — backend only, no UI change\n\n"
+            f"[T-9min]  homepage-service · surface: homepage · config change\n"
+            f"          'Hero banner CDN path swap' — image URL only, same layout\n\n"
+            f"[T-3min]  {culprit_service} · surface: {culprit_surface} · {scenario['change_type']} change\n"
+            f"          '{scenario['name']}' — deployed 3 min before drift onset\n\n"
+            "Note: the behavioral drop is concentrated on the surface where checkout "
+            "originates. Correlate surface + timing + segment to attribute."
+        )
+
     if tool_name == "get_change_artifact":
         return (
-            f"Artifact: {scenario['change_artifact']}\n"
+            f"Raw change:\n{scenario['change_artifact']}\n\n"
             f"Type: {scenario['change_type']}\n"
-            f"Engineer: {scenario['engineer']}\n"
-            f"Team: {scenario['team']}"
+            f"Surface: {scenario['surface']}\n"
+            f"Engineer: {scenario['engineer']} · Team: {scenario['team']}\n"
+            f"(No impact analysis attached — infer the mechanism from the diff "
+            f"and the segment breakdown.)"
         )
 
     if tool_name == "get_segment_breakdown":
@@ -171,14 +200,15 @@ def handle_tool(tool_name: str, tool_input: dict, scenario: dict, stats: dict) -
 
     if tool_name == "get_similar_incidents":
         service = tool_input.get("service", scenario["service"])
-        if scenario["outcome"] == "regression":
-            return (
-                f"2 similar incidents found on {service} in last 90 days.\n"
-                f"Most recent: 34 days ago, cause: UI layout shift on mobile viewport.\n"
-                f"Resolved by: reverting CSS change. MTTR: 47 minutes."
-            )
-        else:
-            return f"No similar incidents found on {service} in last 90 days."
+        return (
+            f"Incident history for {service} (last 90 days):\n"
+            f"- 34 days ago: mobile-viewport layout shift after a UI change "
+            f"(checkout dip on iOS, resolved by revert, MTTR 47 min)\n"
+            f"- 61 days ago: backend latency regression (no behavioral impact, "
+            f"auto-resolved)\n"
+            f"Relevance to the current signal is for you to assess based on "
+            f"surface, segment, and change type."
+        )
 
     return f"Unknown tool: {tool_name}"
 
@@ -198,10 +228,6 @@ async def run_investigation(scenario: dict, stats: dict) -> dict:
         f"Affected segment: {scenario['affected_segment']}\n\n"
         f"Use your tools to investigate then return the JSON diagnosis."
     )
-
-    context = scenario.get("context_for_claude", "")
-    if context:
-        initial_message += f"\n\nContext from the engineering team:\n{context}"
 
     messages = [{"role": "user", "content": initial_message}]
     max_iterations = 10

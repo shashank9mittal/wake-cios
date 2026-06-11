@@ -7,6 +7,7 @@ import ReplayEngine, { type ReplaySnapshot } from "./components/ReplayEngine";
 import DemoPage from "./pages/DemoPage";
 import SidebarSearch from "./components/SidebarSearch";
 import Tooltip from "./components/Tooltip";
+import WhyTile from "./components/WhyTile";
 import type {
   DeployEvent,
   MetricsResponse,
@@ -549,6 +550,8 @@ function App() {
                       </Tooltip>
                     ))}
                 </div>
+
+                {metrics && <WhyTile metrics={metrics} signalLocked={!!(selected && signalLocked[selected])} />}
 
                 {selectedChange.deployed_at &&
                   !metrics?.signal_detected &&
