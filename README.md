@@ -34,9 +34,9 @@ A deploy can be **technically green and behaviorally broken** — 200s across th
 
 ---
 
-## 🎬 Demo (3 minutes)
+## 🎬 Demo
 
-<!-- ▸▸▸ PASTE DEMO VIDEO LINK / EMBED HERE ◂◂◂ -->
+https://github.com/shashank9mittal/wake-cios/raw/main/docs/wake-demo.mp4
 
 **What you'll see, end to end, with zero manual steps:**
 
